@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>TV Slider</title>
+  </head>
+  <body data-gr-c-s-loaded="true" class="medium-usage">
+    <main class="grid">
+      <section class="col-7-12">
+        <h1>
+          <span id="temperature">--</span>
+        </h1>
+          <button class="increase-temp">+</button>
+          <button class="decrease-temp">-</button>
+          <button id="btn-toggle-on-off" class="PSM-on">--</button>
+          <table align="center">
+          <tr>
+            <td width=50><div id="ind-zone1" class="led-red"></div></td>
+            <td width=120>Motor Speed</td>
+            <td width=50><div id="temp-zone1">{{ motor_speed }}</div></td>
+          </tr>
+          <tr>
+            <td width=50><div id="ind-zone2" class="led-red"></div></td>
+            <td width=120>Motor Direction</td>
+            <td width=50><div id="temp-zone2">{{ motor_direction }}</div></td>
+          </tr>
+          </table>
+      </section>
+    </main>
+ 
+
+</body></html>
