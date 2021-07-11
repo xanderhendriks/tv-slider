@@ -1,5 +1,7 @@
 import logging
 import RPi.GPIO as GPIO
+import threading
+import time
 
 from enum import Enum
 
@@ -34,8 +36,9 @@ class State(Enum):
 class TvSliderMotorControl:
     SENSOR_STRINGS = {25: 'OUT_END', 16: 'OUT_SLOW', 20: 'IN_SLOW', 21: 'IN_END'}
 
-    SLOW_SPEED = 6000
-    FAST_SPEED = 12000 #95000
+    SLOW_SPEED = 3000
+    FAST_SPEED = 95000
+    SPEED_STEP = 2000
 
     GPIO_SENSOR_OUT_END = 25  
     GPIO_SENSOR_OUT_SLOW = 16  
@@ -51,6 +54,9 @@ class TvSliderMotorControl:
         self.motor_speed = 0
         self.motor_direction = Direction.IN
         self.drive_state = State.STOPPED
+
+        # A lock for the process state function to allow both GPIO callback or thread to call the function 
+        self.lock = threading.Lock()
 
         # Instruct the GPIO module to interpret pin numbers as GPIOXX
         GPIO.setmode(GPIO.BCM)
@@ -85,6 +91,12 @@ class TvSliderMotorControl:
 
         logger.info(f'Initial tv_position: {self.tv_position}')
 
+        self.thread = threading.Thread(target=self.thread_process)
+        self.thread.start()
+
+    def stop():
+        self.thread_run = False
+        self.thread.join()
 
     def move(self, direction):
         if direction == Direction.OUT:
@@ -172,7 +184,8 @@ class TvSliderMotorControl:
     def set_state(self, state):
         if state == State.STOPPED:
             self.speed_set(0)
-
+            self.drive_state = State.STOPPED
+            
         elif state == State.OUT_RAMP_UP:
             if self.tv_position != Position.OUT_END:
                 self.direction_set(Direction.OUT)
@@ -207,36 +220,53 @@ class TvSliderMotorControl:
 
         logger.info(f'set_state: requested state {state}, new state: {self.drive_state}')
 
-
     def run_state_machine(self):
-        if self.drive_state == State.STOPPED:
-            pass
+        with self.lock:
+            if self.drive_state == State.STOPPED:
+                pass
 
-        elif self.drive_state == State.OUT_RAMP_UP:
-            if self.tv_position == Position.CENTER:
-                self.set_state(State.OUT)
+            elif self.drive_state == State.OUT_RAMP_UP:
+                speed = self.speed_get() + self.SPEED_STEP
+                if speed > self.FAST_SPEED:
+                    self.set_state(State.OUT)
+                else:
+                    self.speed_set(speed)
+                print(f'ramp up, speed: {speed}')
 
-        elif self.drive_state == State.OUT:
-            if self.tv_position == Position.OUT_SLOW:
-                self.set_state(State.OUT_RAMP_DOWN)
+            elif self.drive_state == State.OUT:
+                if self.tv_position == Position.OUT_SLOW:
+                    self.set_state(State.OUT_RAMP_DOWN)
 
-        elif self.drive_state == State.OUT_RAMP_DOWN:
-            if self.tv_position == Position.OUT_END:
-                self.set_state(State.STOPPED)
+            elif self.drive_state == State.OUT_RAMP_DOWN:
+                if self.tv_position == Position.OUT_END:
+                    self.set_state(State.STOPPED)
 
-        elif self.drive_state == State.IN_RAMP_UP:
-            if self.tv_position == Position.CENTER:
-                self.set_state(State.IN)
+            elif self.drive_state == State.IN_RAMP_UP:
+                if self.tv_position == Position.CENTER:
+                    self.set_state(State.IN)
 
-        elif self.drive_state == State.IN:
-            if self.tv_position == Position.IN_SLOW:
-                self.set_state(State.IN_RAMP_DOWN)
+            elif self.drive_state == State.IN:
+                if self.tv_position == Position.IN_SLOW:
+                    self.set_state(State.IN_RAMP_DOWN)
 
-        elif self.drive_state == State.IN_RAMP_DOWN:
-            if self.tv_position == Position.IN_END:
-                self.set_state(State.STOPPED)
+            elif self.drive_state == State.IN_RAMP_DOWN:
+                if self.tv_position == Position.IN_END:
+                    self.set_state(State.STOPPED)
 
-        # From any running state, go to stop if the end is reached
-        if self.drive_state != State.STOPPED:
-            if (self.tv_position == Position.IN_END) or (self.tv_position == Position.OUT_END):
-                self.set_state(State.STOPPED)
+            # From any running state, go to stop if the end is reached
+            if self.drive_state != State.STOPPED:
+                if (((self.tv_position == Position.IN_END) and (self.motor_direction == Direction.IN) and (self.motor_speed > 0)) or
+                   ((self.tv_position == Position.OUT_END) and (self.motor_direction == Direction.OUT) and (self.motor_speed > 0))):
+                    print('end')
+                    self.set_state(State.STOPPED)
+
+    def thread_process(self):
+        self.thread_run = True
+        print('Starting thread process')
+        
+        while (self.thread_run):
+            self.run_state_machine()
+
+            # All timing based on 100 ms timebase
+            time.sleep(0.1)
+
