@@ -94,7 +94,7 @@ class TvSliderMotorControl:
         self.thread = threading.Thread(target=self.thread_process)
         self.thread.start()
 
-    def stop():
+    def stop(self):
         self.thread_run = False
         self.thread.join()
 
@@ -185,7 +185,7 @@ class TvSliderMotorControl:
         if state == State.STOPPED:
             self.speed_set(0)
             self.drive_state = State.STOPPED
-            
+
         elif state == State.OUT_RAMP_UP:
             if self.tv_position != Position.OUT_END:
                 self.direction_set(Direction.OUT)
@@ -199,7 +199,6 @@ class TvSliderMotorControl:
             self.drive_state = State.OUT
 
         elif state == State.OUT_RAMP_DOWN:
-            self.speed_set(self.SLOW_SPEED)
             self.drive_state = State.OUT_RAMP_DOWN
 
         elif state == State.IN_RAMP_UP:
@@ -215,7 +214,6 @@ class TvSliderMotorControl:
             self.drive_state = State.IN 
 
         elif state == State.IN_RAMP_DOWN:
-            self.speed_set(self.SLOW_SPEED)
             self.drive_state = State.IN_RAMP_DOWN
 
         logger.info(f'set_state: requested state {state}, new state: {self.drive_state}')
@@ -231,7 +229,6 @@ class TvSliderMotorControl:
                     self.set_state(State.OUT)
                 else:
                     self.speed_set(speed)
-                print(f'ramp up, speed: {speed}')
 
             elif self.drive_state == State.OUT:
                 if self.tv_position == Position.OUT_SLOW:
@@ -241,9 +238,16 @@ class TvSliderMotorControl:
                 if self.tv_position == Position.OUT_END:
                     self.set_state(State.STOPPED)
 
+                speed = self.speed_get() - self.SPEED_STEP
+                if speed > self.SLOW_SPEED:
+                    self.speed_set(speed)
+
             elif self.drive_state == State.IN_RAMP_UP:
-                if self.tv_position == Position.CENTER:
+                speed = self.speed_get() + self.SPEED_STEP
+                if speed > self.FAST_SPEED:
                     self.set_state(State.IN)
+                else:
+                    self.speed_set(speed)
 
             elif self.drive_state == State.IN:
                 if self.tv_position == Position.IN_SLOW:
@@ -253,11 +257,14 @@ class TvSliderMotorControl:
                 if self.tv_position == Position.IN_END:
                     self.set_state(State.STOPPED)
 
+                speed = self.speed_get() - self.SPEED_STEP
+                if speed > self.SLOW_SPEED:
+                    self.speed_set(speed)
+
             # From any running state, go to stop if the end is reached
             if self.drive_state != State.STOPPED:
                 if (((self.tv_position == Position.IN_END) and (self.motor_direction == Direction.IN) and (self.motor_speed > 0)) or
                    ((self.tv_position == Position.OUT_END) and (self.motor_direction == Direction.OUT) and (self.motor_speed > 0))):
-                    print('end')
                     self.set_state(State.STOPPED)
 
     def thread_process(self):

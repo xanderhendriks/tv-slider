@@ -87,6 +87,7 @@ def main():
     app.run(host='0.0.0.0')
 
     mqtt.stop()
+    motor_control.stop()
 
 
 if __name__ == "__main__":
