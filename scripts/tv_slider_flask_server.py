@@ -30,9 +30,13 @@ def index():
 
 @app.route("/move/<direction>")
 def move(direction):
-    direction = motor_control.move(direction_string_to_direction(direction))
+    motor_control.move(direction_string_to_direction(direction))
     return 'OK'
 
+@app.route("/stop")
+def stop():
+    motor_control.stop()
+    return 'OK'
 
 @app.route("/speed/set/<speed>")
 def speed_set(speed):
@@ -86,8 +90,8 @@ def main():
     mqtt = tv_slider_mqtt.TvSliderMqtt(mqtt_callback)
     app.run(host='0.0.0.0')
 
-    mqtt.stop()
-    motor_control.stop()
+    mqtt.end()
+    motor_control.end()
 
 
 if __name__ == "__main__":

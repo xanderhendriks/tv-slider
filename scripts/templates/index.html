@@ -1,31 +1,50 @@
 <!DOCTYPE html>
 <html>
-  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <head>
     <title>TV Slider</title>
   </head>
-  <body data-gr-c-s-loaded="true" class="medium-usage">
-    <main class="grid">
-      <section class="col-7-12">
-        <h1>
-          <span id="temperature">--</span>
-        </h1>
-          <button class="increase-temp">+</button>
-          <button class="decrease-temp">-</button>
-          <button id="btn-toggle-on-off" class="PSM-on">--</button>
-          <table align="center">
-          <tr>
-            <td width=50><div id="ind-zone1" class="led-red"></div></td>
-            <td width=120>Motor Speed</td>
-            <td width=50><div id="temp-zone1">{{ motor_speed }}</div></td>
-          </tr>
-          <tr>
-            <td width=50><div id="ind-zone2" class="led-red"></div></td>
-            <td width=120>Motor Direction</td>
-            <td width=50><div id="temp-zone2">{{ motor_direction }}</div></td>
-          </tr>
-          </table>
-      </section>
-    </main>
+  <script>
+  function callRestAPI(url) {
+      var xhttp = new XMLHttpRequest();
  
+      xhttp.onreadystatechange = function() {
+        if (xhttp.readyState === 4) {
+          document.getElementById("output").innerHTML = xhttp.response;
+        }
+      }
 
-</body></html>
+      xhttp.open('GET', url);
+      xhttp.setRequestHeader('Content-Type', 'application/json');
+      xhttp.send();
+  }
+  </script>
+  <body >
+    <table align="center">
+    <tr>
+      <td width=120>
+      <button type="submit" onclick="callRestAPI('/move/in')">Move in</button>
+      </td>
+    </tr>
+    <tr>
+      <td width=120>
+      <button type="submit" onclick="callRestAPI('/move/out')">Move out</button>
+      </td>
+    </tr>
+    <tr>
+      <td width=120>
+      <button type="submit" onclick="callRestAPI('/stop')">Stop</button>
+      </td>
+    </tr>
+    <tr>
+      <td width=120>
+      <button type="submit" onclick="callRestAPI('/sensors/get')">Sensors</button>
+      </td>
+    </tr>
+    <tr>
+      <td width=120>
+      <p id="output"></p>
+      </td>
+    </tr>
+    </table>
+  </body>
+</html>

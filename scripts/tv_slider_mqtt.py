@@ -36,5 +36,5 @@ class TvSliderMqtt:
             if self.callback is not None:
                 self.callback(direction)
 
-    def stop(self):
+    def end(self):
         self.mqtt_client.loop_stop()

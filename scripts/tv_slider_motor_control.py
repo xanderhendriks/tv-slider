@@ -36,9 +36,10 @@ class State(Enum):
 class TvSliderMotorControl:
     SENSOR_STRINGS = {25: 'OUT_END', 16: 'OUT_SLOW', 20: 'IN_SLOW', 21: 'IN_END'}
 
-    SLOW_SPEED = 3000
-    FAST_SPEED = 95000
-    SPEED_STEP = 2000
+    SLOW_SPEED = 8000
+    FAST_SPEED = 120000
+    SPEED_RAMP_UP_STEP = 2500
+    SPEED_RAMP_DOWN_STEP = 2500
 
     GPIO_SENSOR_OUT_END = 25  
     GPIO_SENSOR_OUT_SLOW = 16  
@@ -94,9 +95,12 @@ class TvSliderMotorControl:
         self.thread = threading.Thread(target=self.thread_process)
         self.thread.start()
 
-    def stop(self):
+    def end(self):
         self.thread_run = False
         self.thread.join()
+
+    def stop(self):
+        self.set_state(State.STOPPED)
 
     def move(self, direction):
         if direction == Direction.OUT:
@@ -224,8 +228,8 @@ class TvSliderMotorControl:
                 pass
 
             elif self.drive_state == State.OUT_RAMP_UP:
-                speed = self.speed_get() + self.SPEED_STEP
-                if speed > self.FAST_SPEED:
+                speed = self.speed_get() + self.SPEED_RAMP_UP_STEP
+                if speed >= self.FAST_SPEED:
                     self.set_state(State.OUT)
                 else:
                     self.speed_set(speed)
@@ -238,13 +242,17 @@ class TvSliderMotorControl:
                 if self.tv_position == Position.OUT_END:
                     self.set_state(State.STOPPED)
 
-                speed = self.speed_get() - self.SPEED_STEP
+                speed = self.speed_get()
                 if speed > self.SLOW_SPEED:
-                    self.speed_set(speed)
+                    speed -= self.SPEED_RAMP_DOWN_STEP
+                    if speed > self.SLOW_SPEED:
+                        self.speed_set(speed)
+                    else:
+                        self.speed_set(self.SLOW_SPEED)
 
             elif self.drive_state == State.IN_RAMP_UP:
-                speed = self.speed_get() + self.SPEED_STEP
-                if speed > self.FAST_SPEED:
+                speed = self.speed_get() + self.SPEED_RAMP_UP_STEP
+                if speed >= self.FAST_SPEED:
                     self.set_state(State.IN)
                 else:
                     self.speed_set(speed)
@@ -257,9 +265,13 @@ class TvSliderMotorControl:
                 if self.tv_position == Position.IN_END:
                     self.set_state(State.STOPPED)
 
-                speed = self.speed_get() - self.SPEED_STEP
+                speed = self.speed_get()
                 if speed > self.SLOW_SPEED:
-                    self.speed_set(speed)
+                    speed -= self.SPEED_RAMP_DOWN_STEP
+                    if speed > self.SLOW_SPEED:
+                        self.speed_set(speed)
+                    else:
+                        self.speed_set(self.SLOW_SPEED)
 
             # From any running state, go to stop if the end is reached
             if self.drive_state != State.STOPPED:
