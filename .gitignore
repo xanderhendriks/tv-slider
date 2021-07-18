@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 /doc/apidoc
-
+.idea
