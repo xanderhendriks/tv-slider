@@ -6,6 +6,10 @@ Introduction
 The TV Slider was created because the only good place for a TV in our lounge area was right in front of a window. With a 65" flatscreen TV that meant that half the window was blocked all the time.
 The TV Slider fixes this problem by hiding the TV in the wall when it's not in use.
 
+Locations
+^^^^^^^^^
+The documentation is stored in github pages: `https://xanderhendriks.github.io/tv-slider <https://xanderhendriks.github.io/tv-slider>`_ and the source files are in github: `https://github.com/xanderhendriks/tv-slider <https://github.com/xanderhendriks/tv-slider>`_
+
 Installation
 ------------
 The TV Slider runs on a standard RaspOS Lite image. Before inserting the SD Card in the RPi create an emty file with the name ssh in the boot drive to enable ssh.
