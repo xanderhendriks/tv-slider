@@ -22,6 +22,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create documentation
+        if: startsWith(github.ref, 'refs/tags')
         run: |
           sphinx-apidoc -o doc/apidoc scripts
           sphinx-build doc build/sphinx/html

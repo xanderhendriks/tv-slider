@@ -12,7 +12,7 @@ The documentation is stored in github pages: `https://xanderhendriks.github.io/t
 
 Installation
 ------------
-The TV Slider runs on a standard RaspOS Lite image. Before inserting the SD Card in the RPi create an emty file with the name ssh in the boot drive to enable ssh.
+The TV Slider runs on a standard RaspOS Lite image. Before inserting the SD Card in the RPi create an empty file with the name ssh in the boot drive to enable ssh.
 
 Once started up connect to the device and change the hostname to **tv-slider** by replacing **raspberrypi** in the following files:
 
@@ -21,14 +21,14 @@ Once started up connect to the device and change the hostname to **tv-slider** b
 
 Having a static IP can be convenient to find the device on the LAN and this can be done by updating the **/etc/dhcpcd.conf**. The **Example static IP configuration** section in the file shows how.
 
-clone the repo in the **/home/pi** directory and execute the follwing commands:
+clone the repo in the **/home/pi** directory and execute the following commands:
 
 1. Install the required Python packages: ``pip3 install -r scripts/requirements.txt``
 2. Create a symbolic link for the service: ``sudo ln -s /home/pi/tv-slider/linux/etc/systemd/system/tv-slider.service /etc/systemd/system/tv-slider.service``
 
 Configuration
 -------------
-The device listens to the MQTT broker as specified in the TvSliderMqtt class with the follwoing parameters:
+The device listens to the MQTT broker as specified in the TvSliderMqtt class with the following parameters:
 
 - MQTT_SERVER: set to 192.168.0.253
 - MQTT_PORT: set to 1883
