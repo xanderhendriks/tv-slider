@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>TV Slider &mdash; tv-slider 0.1.0
+  <title>TV Slider &mdash; tv-slider 0.2.0
  documentation</title>
   
 
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.2.0
 
               </div>
             
@@ -164,11 +164,44 @@
             
   <div class="section" id="tv-slider">
 <h1>TV Slider<a class="headerlink" href="#tv-slider" title="Permalink to this headline">¶</a></h1>
-<p>The TV Slider runs on a standard Raspbian image with the following files from this repo added:
-* scripts/requirement.txt: Requirements for Python environment. Install: pip3 install -r scripts/requirement.txt
-* scripts/tv_slider_flask_server.py, scripts/tv_slider_motor_control.py, scripts/tv_slider_mqtt.py: TV Slider application files
-* scripts/templates/index.html: Web page that can be accessed on port 5000
-* etc/systemd/system/tv-slider.service: Service definition file. Start with: sudo systemctl start tv-slider</p>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The TV Slider was created because the only good place for a TV in our lounge area was right in front of a window. With a 65” flatscreen TV that meant that half the window was blocked all the time.
+The TV Slider fixes this problem by hiding the TV in the wall when it’s not in use.</p>
+<div class="section" id="locations">
+<h3>Locations<a class="headerlink" href="#locations" title="Permalink to this headline">¶</a></h3>
+<p>The documentation is stored in github pages: <a class="reference external" href="https://xanderhendriks.github.io/tv-slider">https://xanderhendriks.github.io/tv-slider</a> and the source files are in github: <a class="reference external" href="https://github.com/xanderhendriks/tv-slider">https://github.com/xanderhendriks/tv-slider</a></p>
+</div>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>The TV Slider runs on a standard RaspOS Lite image. Before inserting the SD Card in the RPi create an emty file with the name ssh in the boot drive to enable ssh.</p>
+<p>Once started up connect to the device and change the hostname to <strong>tv-slider</strong> by replacing <strong>raspberrypi</strong> in the following files:</p>
+<ul class="simple">
+<li><p>/etc/hosts</p></li>
+<li><p>/etc/hostname</p></li>
+</ul>
+<p>Having a static IP can be convenient to find the device on the LAN and this can be done by updating the <strong>/etc/dhcpcd.conf</strong>. The <strong>Example static IP configuration</strong> section in the file shows how.</p>
+<p>clone the repo in the <strong>/home/pi</strong> directory and execute the follwing commands:</p>
+<ol class="arabic simple">
+<li><p>Install the required Python packages: <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">scripts/requirements.txt</span></code></p></li>
+<li><p>Create a symbolic link for the service: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">/home/pi/tv-slider/linux/etc/systemd/system/tv-slider.service</span> <span class="pre">/etc/systemd/system/tv-slider.service</span></code></p></li>
+</ol>
+</div>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>The device listens to the MQTT broker as specified in the TvSliderMqtt class with the follwoing parameters:</p>
+<ul class="simple">
+<li><p>MQTT_SERVER: set to 192.168.0.253</p></li>
+<li><p>MQTT_PORT: set to 1883</p></li>
+</ul>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Start the service with the following command:</p>
+<p><code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">start</span> <span class="pre">tv-slider</span></code></p>
+<p>Now the device can be access at the following url: <a class="reference external" href="http://tv-slider:5000">tv-slider:5000</a></p>
+</div>
 <div class="section" id="api">
 <h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
