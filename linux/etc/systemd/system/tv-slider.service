@@ -6,9 +6,9 @@ After=network-online.target
 [Service]
 ExecStartPre=/bin/sh -c 'until ping -c1 google.com; do sleep 1; done;'
 ExecStart=/usr/bin/python3 -u tv_slider_flask_server.py
-WorkingDirectory=/home/pi/tv_slider
-StandardOutput=append:/home/pi/tv_slider/tv-slider.log
-StandardError=append:/home/pi/tv_slider/tv-slider.log
+WorkingDirectory=/home/pi/tv-slider
+StandardOutput=append:/home/pi/tv-slider/tv-slider.log
+StandardError=append:/home/pi/tv-slider/tv-slider.log
 Restart=always
 User=pi
 
