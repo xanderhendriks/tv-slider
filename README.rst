@@ -20,7 +20,7 @@ Having a static IP can be convenient to find the device on the LAN and this can 
 clone the repo in the **/home/pi** directory and execute the follwing commands:
 
 1. Install the required Python packages: ``pip3 install -r scripts/requirements.txt``
-2. Create a symbolic link for the service: ``sudo ln -s tv-slider/linux/etc/systemd/system/tv-slider.service /etc/systemd/system/tv-slider.service``
+2. Create a symbolic link for the service: ``sudo ln -s /home/pi/tv-slider/linux/etc/systemd/system/tv-slider.service /etc/systemd/system/tv-slider.service``
 
 Configuration
 -------------
