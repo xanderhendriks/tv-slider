@@ -1,0 +1,7 @@
+tv\_slider\_motor\_control module
+=================================
+
+.. automodule:: tv_slider_motor_control
+   :members:
+   :undoc-members:
+   :show-inheritance:

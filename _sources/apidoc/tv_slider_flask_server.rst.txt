@@ -1,0 +1,7 @@
+tv\_slider\_flask\_server module
+================================
+
+.. automodule:: tv_slider_flask_server
+   :members:
+   :undoc-members:
+   :show-inheritance:

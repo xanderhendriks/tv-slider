@@ -1,0 +1,7 @@
+tv\_slider\_mqtt module
+=======================
+
+.. automodule:: tv_slider_mqtt
+   :members:
+   :undoc-members:
+   :show-inheritance:
