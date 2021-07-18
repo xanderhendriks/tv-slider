@@ -1,9 +1,13 @@
 import logging
-import RPi.GPIO as GPIO
+import platform
 import threading
 import time
 
 from enum import Enum
+
+# Sphinx is not being run on a RPI, so this package can't be imported when creating the documentation
+if 'armv7l' in platform.platform():
+    import RPi.GPIO as GPIO
 
 
 logger = logging.getLogger(__name__)
@@ -41,9 +45,9 @@ class TvSliderMotorControl:
     SPEED_RAMP_UP_STEP = 2500
     SPEED_RAMP_DOWN_STEP = 2500
 
-    GPIO_SENSOR_OUT_END = 25  
-    GPIO_SENSOR_OUT_SLOW = 16  
-    GPIO_SENSOR_IN_SLOW = 20  
+    GPIO_SENSOR_OUT_END = 25
+    GPIO_SENSOR_OUT_SLOW = 16
+    GPIO_SENSOR_IN_SLOW = 20
     GPIO_SENSOR_IN_END = 21
 
     GPIO_MOTOR_DISABLE = 4
@@ -56,7 +60,7 @@ class TvSliderMotorControl:
         self.motor_direction = Direction.IN
         self.drive_state = State.STOPPED
 
-        # A lock for the process state function to allow both GPIO callback or thread to call the function 
+        # A lock for the process state function to allow both GPIO callback or thread to call the function
         self.lock = threading.Lock()
 
         # Instruct the GPIO module to interpret pin numbers as GPIOXX
@@ -79,11 +83,11 @@ class TvSliderMotorControl:
         GPIO.setup(self.GPIO_SENSOR_IN_END, GPIO.IN)
 
         # Hook the sensors up to event handlers. For the slow sensors only rising. For the end sensors both
-        # rising and falling as there is a state change when it arrives and when it leaves this position 
-        GPIO.add_event_detect(self.GPIO_SENSOR_OUT_SLOW, GPIO.RISING, callback=self.sensors_callback)  
-        GPIO.add_event_detect(self.GPIO_SENSOR_OUT_END, GPIO.BOTH, callback=self.sensors_callback)  
-        GPIO.add_event_detect(self.GPIO_SENSOR_IN_SLOW, GPIO.RISING, callback=self.sensors_callback)  
-        GPIO.add_event_detect(self.GPIO_SENSOR_IN_END, GPIO.BOTH, callback=self.sensors_callback)  
+        # rising and falling as there is a state change when it arrives and when it leaves this position
+        GPIO.add_event_detect(self.GPIO_SENSOR_OUT_SLOW, GPIO.RISING, callback=self.sensors_callback)
+        GPIO.add_event_detect(self.GPIO_SENSOR_OUT_END, GPIO.BOTH, callback=self.sensors_callback)
+        GPIO.add_event_detect(self.GPIO_SENSOR_IN_SLOW, GPIO.RISING, callback=self.sensors_callback)
+        GPIO.add_event_detect(self.GPIO_SENSOR_IN_END, GPIO.BOTH, callback=self.sensors_callback)
         GPIO.output(self.GPIO_MOTOR_DISABLE, 1)
         if GPIO.input(self.GPIO_SENSOR_OUT_END) == GPIO.HIGH:
             self.tv_position = Position.OUT_END
@@ -104,10 +108,10 @@ class TvSliderMotorControl:
 
     def move(self, direction):
         if direction == Direction.OUT:
-            logger.info(f'move: OUT')
+            logger.info('move: OUT')
             self.set_state(State.OUT_RAMP_UP)
         else:
-            logger.info(f'move: IN')
+            logger.info('move: IN')
             self.set_state(State.IN_RAMP_UP)
 
     def speed_set(self, speed):
@@ -116,11 +120,11 @@ class TvSliderMotorControl:
             self.motor_pwm.ChangeFrequency(speed)
             self.motor_pwm.start(50)
             self.motor_speed = speed
-            GPIO.output(self.GPIO_MOTOR_DISABLE, GPIO.LOW) 
+            GPIO.output(self.GPIO_MOTOR_DISABLE, GPIO.LOW)
         else:
             self.motor_pwm.stop()
             self.motor_speed = 0
-            GPIO.output(self.GPIO_MOTOR_DISABLE, GPIO.HIGH) 
+            GPIO.output(self.GPIO_MOTOR_DISABLE, GPIO.HIGH)
 
     def speed_get(self):
         return self.motor_speed
@@ -128,18 +132,19 @@ class TvSliderMotorControl:
     def direction_set(self, direction):
         if direction == Direction.OUT:
             GPIO.output(self.GPIO_MOTOR_DIRECTION, GPIO.HIGH)
-            logger.info(f'direction_set: OUT')
+            logger.info('direction_set: OUT')
         else:
             GPIO.output(self.GPIO_MOTOR_DIRECTION, GPIO.LOW)
-            logger.info(f'direction_set: IN')
-        
+            logger.info('direction_set: IN')
+
         self.motor_direction = direction
 
     def direction_get(self):
         return self.motor_direction
 
     def sensors_get(self):
-        return (GPIO.input(self.GPIO_SENSOR_OUT_END), GPIO.input(self.GPIO_SENSOR_OUT_SLOW), GPIO.input(self.GPIO_SENSOR_IN_SLOW), GPIO.input(self.GPIO_SENSOR_IN_END))
+        return (GPIO.input(self.GPIO_SENSOR_OUT_END), GPIO.input(self.GPIO_SENSOR_OUT_SLOW),
+                GPIO.input(self.GPIO_SENSOR_IN_SLOW), GPIO.input(self.GPIO_SENSOR_IN_END))
 
     def sensors_callback(self, channel):
         previous_position = self.tv_position
@@ -151,18 +156,18 @@ class TvSliderMotorControl:
                 self.tv_position = Position.OUT_END
             else:
                 self.tv_position = Position.OUT_SLOW
-        
+
         elif channel == self.GPIO_SENSOR_OUT_SLOW:
             if self.tv_position == Position.OUT_SLOW:
                 self.tv_position = Position.CENTER
             elif self.tv_position == Position.CENTER:
                 self.tv_position = Position.OUT_SLOW
-            
+
             # Unknown state, check direction
             elif self.motor_direction == Direction.IN:
                 self.tv_position = Position.CENTER
             else:
-                self.tv_position = Position.OUT_SLOW    
+                self.tv_position = Position.OUT_SLOW
 
         elif channel == self.GPIO_SENSOR_IN_SLOW:
             if self.tv_position == Position.IN_SLOW:
@@ -174,14 +179,14 @@ class TvSliderMotorControl:
             elif self.motor_direction == Direction.OUT:
                 self.tv_position = Position.CENTER
             else:
-                self.tv_position = Position.IN_SLOW  
+                self.tv_position = Position.IN_SLOW
 
         if channel == self.GPIO_SENSOR_IN_END:
             if GPIO.input(self.GPIO_SENSOR_IN_END) == 1:
                 self.tv_position = Position.IN_END
             else:
                 self.tv_position = Position.IN_SLOW
-        
+
         logger.info(f'tv_position changed from: {previous_position} to {self.tv_position}')
         self.run_state_machine()
 
@@ -215,7 +220,7 @@ class TvSliderMotorControl:
 
         elif state == State.IN:
             self.speed_set(self.FAST_SPEED)
-            self.drive_state = State.IN 
+            self.drive_state = State.IN
 
         elif state == State.IN_RAMP_DOWN:
             self.drive_state = State.IN_RAMP_DOWN
@@ -282,10 +287,9 @@ class TvSliderMotorControl:
     def thread_process(self):
         self.thread_run = True
         print('Starting thread process')
-        
+
         while (self.thread_run):
             self.run_state_machine()
 
             # All timing based on 100 ms timebase
             time.sleep(0.1)
-

@@ -23,6 +23,7 @@ def direction_string_to_direction(direction_string):
 
     return direction
 
+
 @app.route("/")
 def index():
     return render_template("index.html", motor_speed=0, motor_direction=0)
@@ -33,14 +34,16 @@ def move(direction):
     motor_control.move(direction_string_to_direction(direction))
     return 'OK'
 
+
 @app.route("/stop")
 def stop():
     motor_control.stop()
     return 'OK'
 
+
 @app.route("/speed/set/<speed>")
 def speed_set(speed):
-    motor_control.speed_set(int(speed))    
+    motor_control.speed_set(int(speed))
     return 'OK'
 
 
@@ -64,7 +67,7 @@ def direction_set(direction):
 
 @app.route("/direction/get")
 def direction_get():
-    direction = 'OUT' if motor_control.direction_get() == tv_slider_motor_control.Direction.OUT else 'IN' 
+    direction = 'OUT' if motor_control.direction_get() == tv_slider_motor_control.Direction.OUT else 'IN'
 
     return f'Direction: {direction}'
 
@@ -78,9 +81,9 @@ def log():
 
 
 def mqtt_callback(direction):
-    logger.info(f'mqtt_callback {direction}') 
+    logger.info(f'mqtt_callback {direction}')
 
-    motor_control.move(direction_string_to_direction(direction))    
+    motor_control.move(direction_string_to_direction(direction))
 
 
 def main():
