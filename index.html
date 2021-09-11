@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>TV Slider &mdash; tv-slider 0.2.0
+  <title>TV Slider &mdash; tv-slider 1.0.0
  documentation</title>
   
 
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                0.2.0
+                1.0.0
 
               </div>
             
@@ -175,14 +175,14 @@ The TV Slider fixes this problem by hiding the TV in the wall when it’s not in
 </div>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>The TV Slider runs on a standard RaspOS Lite image. Before inserting the SD Card in the RPi create an emty file with the name ssh in the boot drive to enable ssh.</p>
+<p>The TV Slider runs on a standard RaspOS Lite image. Before inserting the SD Card in the RPi create an empty file with the name ssh in the boot drive to enable ssh.</p>
 <p>Once started up connect to the device and change the hostname to <strong>tv-slider</strong> by replacing <strong>raspberrypi</strong> in the following files:</p>
 <ul class="simple">
 <li><p>/etc/hosts</p></li>
 <li><p>/etc/hostname</p></li>
 </ul>
 <p>Having a static IP can be convenient to find the device on the LAN and this can be done by updating the <strong>/etc/dhcpcd.conf</strong>. The <strong>Example static IP configuration</strong> section in the file shows how.</p>
-<p>clone the repo in the <strong>/home/pi</strong> directory and execute the follwing commands:</p>
+<p>clone the repo in the <strong>/home/pi</strong> directory and execute the following commands:</p>
 <ol class="arabic simple">
 <li><p>Install the required Python packages: <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">scripts/requirements.txt</span></code></p></li>
 <li><p>Create a symbolic link for the service: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">/home/pi/tv-slider/linux/etc/systemd/system/tv-slider.service</span> <span class="pre">/etc/systemd/system/tv-slider.service</span></code></p></li>
@@ -190,7 +190,7 @@ The TV Slider fixes this problem by hiding the TV in the wall when it’s not in
 </div>
 <div class="section" id="configuration">
 <h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
-<p>The device listens to the MQTT broker as specified in the TvSliderMqtt class with the follwoing parameters:</p>
+<p>The device listens to the MQTT broker as specified in the TvSliderMqtt class with the following parameters:</p>
 <ul class="simple">
 <li><p>MQTT_SERVER: set to 192.168.0.253</p></li>
 <li><p>MQTT_PORT: set to 1883</p></li>
