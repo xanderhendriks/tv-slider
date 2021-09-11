@@ -15,11 +15,18 @@ class TvSliderMqtt:
         self.mqtt_client = mqtt.Client(__name__)
         self.mqtt_client.connect(self.MQTT_SERVER, self.MQTT_PORT)
 
+        self.mqtt_client.on_connect = self.mqtt_on_connect_callback
+
         # Create a MQTT subscriber thread to listen for tv-slider commands
         self.mqtt_client.on_message = self.mqtt_subscribe_callback
-        self.mqtt_client.subscribe('tv-slider/switch')
+
         self.mqtt_client.loop_start()
         self.callback = callback
+
+    def mqtt_on_connect_callback(self, client, userdata, flags, rc):
+        logger.info(f'mqtt_on_connect_callback: rc: {rc}')
+        if rc == 0:
+            self.mqtt_client.subscribe('tv-slider/switch')
 
     def mqtt_subscribe_callback(self, client, userdata, message):
         if self.mqtt_ignore_message:
