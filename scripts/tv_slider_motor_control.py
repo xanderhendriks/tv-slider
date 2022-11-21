@@ -50,7 +50,7 @@ class TvSliderMotorControl:
     GPIO_SENSOR_IN_SLOW = 20
     GPIO_SENSOR_IN_END = 21
 
-    GPIO_MOTOR_DISABLE = 4
+    GPIO_MOTOR_DISABLE = 27
     GPIO_MOTOR_DIRECTION = 17
     GPIO_MOTOR_PWM = 18
 
@@ -63,7 +63,7 @@ class TvSliderMotorControl:
         # A lock for the process state function to allow both GPIO callback or thread to call the function
         self.lock = threading.Lock()
 
-        # Instruct the GPIO module to interpret pin numbers as GPIOXX
+        # Instruct the GPIO module to interpret pin numbers as BCM numbers
         GPIO.setmode(GPIO.BCM)
 
         # Configure the outputs going to the motor driver
@@ -77,10 +77,10 @@ class TvSliderMotorControl:
         self.speed_set(0)
 
         # Configure the inputs from the hall sensors
-        GPIO.setup(self.GPIO_SENSOR_OUT_SLOW, GPIO.IN)
-        GPIO.setup(self.GPIO_SENSOR_OUT_END, GPIO.IN)
-        GPIO.setup(self.GPIO_SENSOR_IN_SLOW, GPIO.IN)
-        GPIO.setup(self.GPIO_SENSOR_IN_END, GPIO.IN)
+        GPIO.setup(self.GPIO_SENSOR_OUT_SLOW, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.GPIO_SENSOR_OUT_END, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.GPIO_SENSOR_IN_SLOW, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.GPIO_SENSOR_IN_END, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         # Hook the sensors up to event handlers. For the slow sensors only rising. For the end sensors both
         # rising and falling as there is a state change when it arrives and when it leaves this position
