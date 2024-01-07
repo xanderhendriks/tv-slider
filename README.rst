@@ -45,10 +45,14 @@ execute the following commands:
 6. Build the code:
   ``cd react-flask-app
   yarn install
-  yarn start``
+  yarn build``
 
 7. Create a symbolic link for the service: 
   ``sudo ln -s /home/pi/tv-slider/tv-slider.service /etc/systemd/system/tv-slider.service``
+
+8. Start the service: 
+  ``sudo systemctl enable tv-slider
+  sudo systemctl start tv-slider``
 
 Configuration
 -------------
