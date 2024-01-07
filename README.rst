@@ -63,8 +63,4 @@ The device listens to the MQTT broker as specified in the TvSliderMqtt class wit
 
 Usage
 -----
-Start the service with the following command:
-
-``sudo systemctl start tv-slider``
-
-Now the device can be access at the following url: `tv-slider:5000 <http://tv-slider:5000>`_
+The webpage can be access at the following url: `tv-slider:5000 <http://tv-slider:5000>`_
