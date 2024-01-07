@@ -21,10 +21,34 @@ Once started up connect to the device and change the hostname to **tv-slider** b
 
 Having a static IP can be convenient to find the device on the LAN and this can be done by updating the **/etc/dhcpcd.conf**. The **Example static IP configuration** section in the file shows how.
 
-clone the repo in the **/home/pi** directory and execute the following commands:
+execute the following commands:
 
-1. Install the required Python packages: ``pip3 install -r scripts/requirements.txt``
-2. Create a symbolic link for the service: ``sudo ln -s /home/pi/tv-slider/linux/etc/systemd/system/tv-slider.service /etc/systemd/system/tv-slider.service``
+1. Install GIT, Python PIP and virtual environment:
+  ``sudo apt install git python3-pip python3-venv``
+
+2. Clone the repo in the **/home/pi** directory:
+  ``git clone git@github.com:xanderhendriks/tv-slider.git``
+
+3. Install the required Python packages: 
+  ``pip3 install -r scripts/requirements.txt``
+
+4. Install nodejs 18: 
+  ``curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+  sudo apt-get install -y nodejs``
+
+5. Install yarn:
+  ``curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  sudo apt install -y yarn
+  yarn --version``
+
+6. Build the code:
+  ``cd react-flask-app
+  yarn install
+  yarn start``
+
+7. Create a symbolic link for the service: 
+  ``sudo ln -s /home/pi/tv-slider/tv-slider.service /etc/systemd/system/tv-slider.service``
 
 Configuration
 -------------
