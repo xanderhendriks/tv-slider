@@ -30,7 +30,10 @@ execute the following commands:
   ``git clone git@github.com:xanderhendriks/tv-slider.git``
 
 3. Install the required Python packages: 
-  ``pip3 install -r scripts/requirements.txt``
+  ``python -m venv ~/.venv
+  . ~/.venv/bin/activate
+  pip install -r scripts/requirements.txt
+  ln -s $PWD/python react-flask-app/api``
 
 4. Install nodejs 18: 
   ``curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
