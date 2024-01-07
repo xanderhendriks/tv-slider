@@ -24,7 +24,7 @@ Having a static IP can be convenient to find the device on the LAN and this can 
 execute the following commands:
 
 1. Install GIT, Python PIP and virtual environment:
-  ``sudo apt install git python3-pip python3-venv``
+  ``sudo apt install git python3-pip python3-venv redis``
 
 2. Clone the repo in the **/home/pi** directory:
   ``git clone git@github.com:xanderhendriks/tv-slider.git``
@@ -54,7 +54,9 @@ execute the following commands:
   ``sudo ln -s /home/pi/tv-slider/tv-slider.service /etc/systemd/system/tv-slider.service``
 
 8. Start the service: 
-  ``sudo systemctl enable tv-slider
+  ``sudo systemctl enable redis-server
+  sudo systemctl start redis-server
+  sudo systemctl enable tv-slider
   sudo systemctl start tv-slider``
 
 Configuration
