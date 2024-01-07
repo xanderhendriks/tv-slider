@@ -13,12 +13,12 @@
 import os
 import subprocess
 import sys
-sys.path.insert(0, os.path.abspath('../scripts/'))
+sys.path.insert(0, os.path.abspath('../python/'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'tv-slider'
-copyright = '2021, Xander Hendriks'
+copyright = '2012-2024, Xander Hendriks'
 author = 'Xander Hendriks'
 
 release = subprocess.check_output(['git', 'describe', '--tags']).decode()

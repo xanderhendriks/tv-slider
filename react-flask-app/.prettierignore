@@ -1,0 +1,5 @@
+# Ignore built dirs
+api
+
+# Ignore build dirs
+**/build
