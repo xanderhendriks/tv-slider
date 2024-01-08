@@ -3,7 +3,7 @@ import logging
 from flask_sse import sse
 
 
-class RedisLoggingHandler(logging.Handler):
+class SseLoggingHandler(logging.Handler):
     def __init__(self, app):
         super().__init__()
         self.app = app
@@ -22,4 +22,4 @@ class RedisLoggingHandler(logging.Handler):
 
         # Send to UI
         with self.app.app_context():
-            sse.publish({'message': f"{log_entry['timestamp']} {log_entry['level']} {log_entry['message']}"}, type='message')
+            sse.publish({'message': f"{log_entry['level']} {log_entry['message']}"}, type='message')

@@ -19,6 +19,7 @@ const FillRow = styled(Row)`
 
 function App() {
   const [logs, setLogs] = useState<string[]>([]);
+  const [position, setPosition] = useState(0);
 
   const handleMoveInClick = async () => {
     await axios.get('/api/move/in');
@@ -34,14 +35,25 @@ function App() {
 
   useEffect(() => {
     const source = new EventSource("http://" + window.location.hostname + ":5000/stream");
-    source.addEventListener('message', handleRedisMessage, false);
+    source.addEventListener('position', handlePositionMessage, false);
+    source.addEventListener('message', handleLogMessage, false);
     source.addEventListener('error', handleRedisError, false);
   
     return () => {
-      source.removeEventListener('message', handleRedisMessage, false);
+      source.removeEventListener('position', handlePositionMessage, false);
+      source.removeEventListener('message', handleLogMessage, false);
       source.removeEventListener('error', handleRedisError, false);
     };
   }, []);
+
+  useEffect(() => {
+    axios.get('/api/position/get')
+      .then(response => {
+        setPosition(response.data);
+      })
+      .catch(error => console.error('Error fetching battery config:', error));
+  }, []);  
+
 
   return (
     <Wrapper>
@@ -51,6 +63,7 @@ function App() {
         <Header />
         <FillRow>
           <TvSlider
+            position={position}
             handleMoveInClick={handleMoveInClick}
             handleMoveOutClick={handleMoveOutClick}
             handleMoveStopClick={handleMoveStopClick}
@@ -63,7 +76,11 @@ function App() {
     </Wrapper>
   );
 
-  function handleRedisMessage(event: any) {
+  function handlePositionMessage(event: any) {
+    setPosition(event.data);
+  }
+
+  function handleLogMessage(event: any) {
     const data = JSON.parse(event.data);
     console.log(data.message);
     setLogs(logs => [

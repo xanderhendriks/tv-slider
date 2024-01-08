@@ -20,8 +20,9 @@ class TvSliderMqtt:
         # Create a MQTT subscriber thread to listen for tv-slider commands
         self.mqtt_client.on_message = self.mqtt_subscribe_callback
 
-        self.mqtt_client.loop_start()
         self.callback = callback
+        self.mqtt_client.loop_start()
+        logger.info('Thread process started')
 
     def mqtt_on_connect_callback(self, client, userdata, flags, rc):
         logger.info(f'mqtt_on_connect_callback: rc: {rc}')
@@ -45,3 +46,4 @@ class TvSliderMqtt:
 
     def end(self):
         self.mqtt_client.loop_stop()
+        logger.info('Thread process stopped')

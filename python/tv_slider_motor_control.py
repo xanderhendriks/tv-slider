@@ -20,11 +20,11 @@ class Direction(Enum):
 
 class Position(Enum):
     UNKNOWN = 0
-    OUT_SLOW = 1
-    OUT_END = 2
+    IN_END = 1
+    IN_SLOW = 2
     CENTER = 3
-    IN_SLOW = 4
-    IN_END = 5
+    OUT_SLOW = 4
+    OUT_END = 5
 
 
 class State(Enum):
@@ -54,17 +54,21 @@ class TvSliderMotorControl:
     GPIO_MOTOR_DIRECTION = 17
     GPIO_MOTOR_PWM = 18
 
-    def __init__(self):
+    def __init__(self, callback=None):
         self.tv_position = Position.UNKNOWN
         self.motor_speed = 0
         self.motor_direction = Direction.IN
         self.drive_state = State.STOPPED
+        self.callback = callback
 
         # A lock for the process state function to allow both GPIO callback or thread to call the function
         self.lock = threading.Lock()
 
         # Instruct the GPIO module to interpret pin numbers as BCM numbers
         GPIO.setmode(GPIO.BCM)
+
+        # The configuration is still kept from the previous execution
+        GPIO.setwarnings(False)
 
         # Configure the outputs going to the motor driver
         GPIO.setup(self.GPIO_MOTOR_DISABLE, GPIO.OUT)
@@ -96,12 +100,17 @@ class TvSliderMotorControl:
 
         logger.info(f'Initial tv_position: {self.tv_position}')
 
+        if self.callback is not None:
+            self.callback(self.tv_position)
+
         self.thread = threading.Thread(target=self.thread_process)
         self.thread.start()
 
     def end(self):
         self.thread_run = False
         self.thread.join()
+        GPIO.cleanup()
+        logger.info('Thread process stopped')
 
     def stop(self):
         self.set_state(State.STOPPED)
@@ -146,6 +155,9 @@ class TvSliderMotorControl:
         return (GPIO.input(self.GPIO_SENSOR_OUT_END), GPIO.input(self.GPIO_SENSOR_OUT_SLOW),
                 GPIO.input(self.GPIO_SENSOR_IN_SLOW), GPIO.input(self.GPIO_SENSOR_IN_END))
 
+    def position_get(self):
+        return self.tv_position
+
     def sensors_callback(self, channel):
         previous_position = self.tv_position
 
@@ -188,6 +200,9 @@ class TvSliderMotorControl:
                 self.tv_position = Position.IN_SLOW
 
         logger.info(f'tv_position changed from: {previous_position} to {self.tv_position}')
+        if self.callback is not None:
+            self.callback(self.tv_position.value)
+
         self.run_state_machine()
 
     def set_state(self, state):
@@ -286,7 +301,7 @@ class TvSliderMotorControl:
 
     def thread_process(self):
         self.thread_run = True
-        print('Starting thread process')
+        logger.info('Thread process started')
 
         while (self.thread_run):
             self.run_state_machine()
