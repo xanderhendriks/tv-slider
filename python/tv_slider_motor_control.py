@@ -201,7 +201,7 @@ class TvSliderMotorControl:
 
         logger.info(f'tv_position changed from: {previous_position} to {self.tv_position}')
         if self.callback is not None:
-            self.callback(self.tv_position.value)
+            self.callback(self.tv_position)
 
         self.run_state_machine()
 
