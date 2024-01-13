@@ -100,11 +100,14 @@ class TvSliderMotorControl:
 
         logger.info(f'Initial tv_position: {self.tv_position}')
 
-        if self.callback is not None:
-            self.callback(self.tv_position)
+        self.report_position()
 
         self.thread = threading.Thread(target=self.thread_process)
         self.thread.start()
+
+    def report_position(self):
+        if self.callback is not None:
+            self.callback(self.position_get())
 
     def end(self):
         self.thread_run = False
@@ -156,7 +159,20 @@ class TvSliderMotorControl:
                 GPIO.input(self.GPIO_SENSOR_IN_SLOW), GPIO.input(self.GPIO_SENSOR_IN_END))
 
     def position_get(self):
-        return self.tv_position
+        percentage = -1
+
+        if self.tv_position == Position.IN_END:
+            percentage = 0
+        elif self.tv_position == Position.IN_SLOW:
+            percentage = 25
+        elif self.tv_position == Position.CENTER:
+            percentage = 50
+        elif self.tv_position == Position.OUT_SLOW:
+            percentage = 75
+        elif self.tv_position == Position.OUT_END:
+            percentage = 100
+
+        return percentage
 
     def sensors_callback(self, channel):
         previous_position = self.tv_position
@@ -200,8 +216,7 @@ class TvSliderMotorControl:
                 self.tv_position = Position.IN_SLOW
 
         logger.info(f'tv_position changed from: {previous_position} to {self.tv_position}')
-        if self.callback is not None:
-            self.callback(self.tv_position)
+        self.report_position()
 
         self.run_state_machine()
 

@@ -49,13 +49,13 @@ signal.signal(signal.SIGINT, handle_signal)
 
 
 def position_callback(position):
-    logger.info(f'position_callback {position}')
+    logger.info(f'position_callback: {position}')
     with app.app_context():
-        sse.publish(position.value, type='position')
+        sse.publish(str(position), type='position')
 
 
 def mqtt_callback(direction):
-    logger.info(f'mqtt_callback {direction}')
+    logger.info(f'mqtt_callback: {direction}')
 
     motor_control.move(direction_string_to_direction(direction))
 
@@ -75,6 +75,10 @@ def direction_string_to_direction(direction_string):
 def index():
     return app.send_static_file('index.html')
 
+@app.route("/api/test/<position>")
+def test(position):
+    sse.publish(str(position), type='position')
+    return 'OK'
 
 @app.route("/api/move/<direction>")
 def move(direction):
@@ -93,7 +97,7 @@ def position_get():
     position = motor_control.position_get()
     logger.info(f'position_get {position}')
 
-    return f'{position.value}'
+    return f'{position}'
 
 
 @app.route("/api/speed/set/<speed>")
