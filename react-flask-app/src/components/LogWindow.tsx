@@ -7,7 +7,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
-  height: 150px;
+  height: 250px;
   overflow-y: scroll;
   border: 1px solid black;
   margin-top: 10px;

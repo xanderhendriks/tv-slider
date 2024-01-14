@@ -58,7 +58,7 @@ function App() {
   return (
     <Wrapper>
       <Container
-        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%'}}
       >
         <Header />
         <FillRow>
@@ -68,10 +68,8 @@ function App() {
             handleMoveOutClick={handleMoveOutClick}
             handleMoveStopClick={handleMoveStopClick}
           />
-        </FillRow>
-        <Row>
           <LogWindow log={logs} />
-        </Row>
+        </FillRow>
       </Container>
     </Wrapper>
   );
