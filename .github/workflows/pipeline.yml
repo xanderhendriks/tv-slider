@@ -3,7 +3,7 @@ on: push
 jobs:
   test-build-publish:
     name: LINT Flake8, Build package and publish documentation to Github
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
