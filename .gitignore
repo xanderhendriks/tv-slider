@@ -2,4 +2,4 @@ __pycache__
 react-flask-app/api
 docs/build
 *.log
-python/test_log.txt
+test_log.txt
