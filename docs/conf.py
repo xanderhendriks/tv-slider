@@ -60,3 +60,6 @@ html_theme_path = ['_theme']
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
+
+# Mock modules that can't be loaded
+autodoc_mock_imports = ['RPi']

@@ -2,6 +2,7 @@
 
 import logging
 import signal
+import sys
 import tv_slider_motor_control
 import tv_slider_mqtt
 
@@ -24,16 +25,17 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(file_logging_handler)
 logger.addHandler(std_err_logging_handler)
 
-app = Flask(__name__, static_folder='/home/pi/tv-slider/react-flask-app/build', static_url_path='/')
-CORS(app)
+if 'sphinx' not in sys.modules:
+    app = Flask(__name__, static_folder='/home/pi/tv-slider/react-flask-app/build', static_url_path='/')
+    CORS(app)
 
-app.config["REDIS_URL"] = "redis://localhost:6379"
-app.register_blueprint(sse, url_prefix='/stream')
+    app.config["REDIS_URL"] = "redis://localhost:6379"
+    app.register_blueprint(sse, url_prefix='/stream')
 
-# Add logging across the SSE link to the browser
-sse_logging_handler = SseLoggingHandler(app)
-sse_logging_handler.setFormatter(logging_formatter)
-logger.addHandler(sse_logging_handler)
+    # Add logging across the SSE link to the browser
+    sse_logging_handler = SseLoggingHandler(app)
+    sse_logging_handler.setFormatter(logging_formatter)
+    logger.addHandler(sse_logging_handler)
 
 
 def handle_signal(signum, frame):
@@ -75,10 +77,12 @@ def direction_string_to_direction(direction_string):
 def index():
     return app.send_static_file('index.html')
 
+
 @app.route("/api/test/<position>")
 def test(position):
     sse.publish(str(position), type='position')
     return 'OK'
+
 
 @app.route("/api/move/<direction>")
 def move(direction):
