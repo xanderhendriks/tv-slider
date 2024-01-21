@@ -16,7 +16,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r python/requirements-doc.txt
       - name: Run flake8 static analysis
-        uses: ChaoticRoman/flake8-github-action@v1.0.1
+        uses: xanderhendriks/flake8-github-action@v1.0.1
         with:
           checkName: 'test-build-publish'   # NOTE: this needs to be the same as the job name
         env:
