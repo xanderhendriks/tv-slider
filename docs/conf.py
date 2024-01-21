@@ -21,7 +21,10 @@ project = 'tv-slider'
 copyright = '2012-2024, Xander Hendriks'
 author = 'Xander Hendriks'
 
-release = subprocess.check_output(['git', 'describe', '--tags']).decode()
+try:
+    release = subprocess.check_output(['git', 'describe', '--tags']).decode()
+except subprocess.CalledProcessError:
+    release = '0.0.0'
 
 # for example take major/minor
 version = release
