@@ -1,13 +1,9 @@
 import logging
-import platform
+import RPi.GPIO as GPIO
 import threading
 import time
 
 from enum import Enum
-
-# Sphinx is not being run on a RPI, so this package can't be imported when creating the documentation
-if 'armv7l' in platform.platform():
-    import RPi.GPIO as GPIO
 
 
 logger = logging.getLogger(__name__)

@@ -25,17 +25,16 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(file_logging_handler)
 logger.addHandler(std_err_logging_handler)
 
-if 'sphinx' not in sys.modules:
-    app = Flask(__name__, static_folder='/home/pi/tv-slider/react-flask-app/build', static_url_path='/')
-    CORS(app)
+app = Flask(__name__, static_folder='/home/pi/tv-slider/react-flask-app/build', static_url_path='/')
+CORS(app)
 
-    app.config["REDIS_URL"] = "redis://localhost:6379"
-    app.register_blueprint(sse, url_prefix='/stream')
+app.config["REDIS_URL"] = "redis://localhost:6379"
+app.register_blueprint(sse, url_prefix='/stream')
 
-    # Add logging across the SSE link to the browser
-    sse_logging_handler = SseLoggingHandler(app)
-    sse_logging_handler.setFormatter(logging_formatter)
-    logger.addHandler(sse_logging_handler)
+# Add logging across the SSE link to the browser
+sse_logging_handler = SseLoggingHandler(app)
+sse_logging_handler.setFormatter(logging_formatter)
+logger.addHandler(sse_logging_handler)
 
 
 def handle_signal(signum, frame):
@@ -61,9 +60,9 @@ def mqtt_callback(direction):
 
     motor_control.move(direction_string_to_direction(direction))
 
-
-motor_control = tv_slider_motor_control.TvSliderMotorControl(position_callback)
-mqtt = tv_slider_mqtt.TvSliderMqtt(mqtt_callback)
+if len(sys.argv) > 1 and sys.argv[1] == "run":
+    motor_control = tv_slider_motor_control.TvSliderMotorControl(position_callback)
+    mqtt = tv_slider_mqtt.TvSliderMqtt(mqtt_callback)
 
 
 def direction_string_to_direction(direction_string):

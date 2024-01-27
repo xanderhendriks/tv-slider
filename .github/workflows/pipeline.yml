@@ -31,4 +31,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
           BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: doc/build/sphinx/html # The folder the action should deploy.
+          FOLDER: docs/build/sphinx/html # The folder the action should deploy.
