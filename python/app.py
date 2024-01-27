@@ -60,6 +60,7 @@ def mqtt_callback(direction):
 
     motor_control.move(direction_string_to_direction(direction))
 
+
 if len(sys.argv) > 1 and sys.argv[1] == "run":
     motor_control = tv_slider_motor_control.TvSliderMotorControl(position_callback)
     mqtt = tv_slider_mqtt.TvSliderMqtt(mqtt_callback)
