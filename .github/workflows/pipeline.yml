@@ -18,7 +18,7 @@ jobs:
       - name: Run flake8 static analysis
         uses: xanderhendriks/flake8-github-action@v1.0.1
         with:
-          checkName: 'test-build-publish'   # NOTE: this needs to be the same as the job name
+          checkName: 'LINT Flake8, Build package and publish documentation to Github'   # NOTE: this needs to be the same as the job name
         env:
           GITHUB_TOKEN: ${{ secrets.XANDERHENDRIKS_REPO }}
       - name: Create documentation
