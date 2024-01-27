@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tv_slider_motor_control module &mdash; tv-slider 2.0.0
+ documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="tv_slider_mqtt module" href="tv_slider_mqtt.html" />
+    <link rel="prev" title="sse_logging module" href="sse_logging.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            tv-slider
+          </a>
+              <div class="version">
+                2.0.0
+
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">python</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app.html">app module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sse_logging.html">sse_logging module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tv_slider_motor_control module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tv_slider_motor_control.Direction"><code class="docutils literal notranslate"><span class="pre">Direction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Direction.IN"><code class="docutils literal notranslate"><span class="pre">Direction.IN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Direction.OUT"><code class="docutils literal notranslate"><span class="pre">Direction.OUT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tv_slider_motor_control.Position"><code class="docutils literal notranslate"><span class="pre">Position</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Position.CENTER"><code class="docutils literal notranslate"><span class="pre">Position.CENTER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Position.IN_END"><code class="docutils literal notranslate"><span class="pre">Position.IN_END</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Position.IN_SLOW"><code class="docutils literal notranslate"><span class="pre">Position.IN_SLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Position.OUT_END"><code class="docutils literal notranslate"><span class="pre">Position.OUT_END</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Position.OUT_SLOW"><code class="docutils literal notranslate"><span class="pre">Position.OUT_SLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.Position.UNKNOWN"><code class="docutils literal notranslate"><span class="pre">Position.UNKNOWN</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tv_slider_motor_control.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.IN"><code class="docutils literal notranslate"><span class="pre">State.IN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.IN_RAMP_DOWN"><code class="docutils literal notranslate"><span class="pre">State.IN_RAMP_DOWN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.IN_RAMP_UP"><code class="docutils literal notranslate"><span class="pre">State.IN_RAMP_UP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.OUT"><code class="docutils literal notranslate"><span class="pre">State.OUT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.OUT_RAMP_DOWN"><code class="docutils literal notranslate"><span class="pre">State.OUT_RAMP_DOWN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.OUT_RAMP_UP"><code class="docutils literal notranslate"><span class="pre">State.OUT_RAMP_UP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.State.STOPPED"><code class="docutils literal notranslate"><span class="pre">State.STOPPED</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.FAST_SPEED"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.FAST_SPEED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_DIRECTION"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_MOTOR_DIRECTION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_DISABLE"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_MOTOR_DISABLE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_PWM"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_MOTOR_PWM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_IN_END"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_SENSOR_IN_END</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_IN_SLOW"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_SENSOR_IN_SLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_OUT_END"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_SENSOR_OUT_END</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_OUT_SLOW"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.GPIO_SENSOR_OUT_SLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.SENSOR_STRINGS"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.SENSOR_STRINGS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.SLOW_SPEED"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.SLOW_SPEED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.SPEED_RAMP_DOWN_STEP"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.SPEED_RAMP_DOWN_STEP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.SPEED_RAMP_UP_STEP"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.SPEED_RAMP_UP_STEP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.direction_get"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.direction_get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.direction_set"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.direction_set()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.end"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.move"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.move()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.position_get"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.position_get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.report_position"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.report_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.run_state_machine"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.run_state_machine()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.sensors_callback"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.sensors_callback()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.sensors_get"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.sensors_get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.set_state"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.set_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.speed_get"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.speed_get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.speed_set"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.speed_set()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.stop"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.stop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tv_slider_motor_control.TvSliderMotorControl.thread_process"><code class="docutils literal notranslate"><span class="pre">TvSliderMotorControl.thread_process()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tv_slider_mqtt.html">tv_slider_mqtt module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">tv-slider</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">python</a></li>
+      <li class="breadcrumb-item active">tv_slider_motor_control module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/build/apidoc/tv_slider_motor_control.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tv_slider_motor_control">
+<span id="tv-slider-motor-control-module"></span><h1>tv_slider_motor_control module<a class="headerlink" href="#module-tv_slider_motor_control" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Direction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tv_slider_motor_control.</span></span><span class="sig-name descname"><span class="pre">Direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.Direction" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Direction.IN">
+<span class="sig-name descname"><span class="pre">IN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#tv_slider_motor_control.Direction.IN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Direction.OUT">
+<span class="sig-name descname"><span class="pre">OUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#tv_slider_motor_control.Direction.OUT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tv_slider_motor_control.</span></span><span class="sig-name descname"><span class="pre">Position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.Position" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position.CENTER">
+<span class="sig-name descname"><span class="pre">CENTER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#tv_slider_motor_control.Position.CENTER" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position.IN_END">
+<span class="sig-name descname"><span class="pre">IN_END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#tv_slider_motor_control.Position.IN_END" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position.IN_SLOW">
+<span class="sig-name descname"><span class="pre">IN_SLOW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#tv_slider_motor_control.Position.IN_SLOW" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position.OUT_END">
+<span class="sig-name descname"><span class="pre">OUT_END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#tv_slider_motor_control.Position.OUT_END" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position.OUT_SLOW">
+<span class="sig-name descname"><span class="pre">OUT_SLOW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#tv_slider_motor_control.Position.OUT_SLOW" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.Position.UNKNOWN">
+<span class="sig-name descname"><span class="pre">UNKNOWN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#tv_slider_motor_control.Position.UNKNOWN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tv_slider_motor_control.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.State" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.IN">
+<span class="sig-name descname"><span class="pre">IN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#tv_slider_motor_control.State.IN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.IN_RAMP_DOWN">
+<span class="sig-name descname"><span class="pre">IN_RAMP_DOWN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#tv_slider_motor_control.State.IN_RAMP_DOWN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.IN_RAMP_UP">
+<span class="sig-name descname"><span class="pre">IN_RAMP_UP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#tv_slider_motor_control.State.IN_RAMP_UP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.OUT">
+<span class="sig-name descname"><span class="pre">OUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#tv_slider_motor_control.State.OUT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.OUT_RAMP_DOWN">
+<span class="sig-name descname"><span class="pre">OUT_RAMP_DOWN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#tv_slider_motor_control.State.OUT_RAMP_DOWN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.OUT_RAMP_UP">
+<span class="sig-name descname"><span class="pre">OUT_RAMP_UP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#tv_slider_motor_control.State.OUT_RAMP_UP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.State.STOPPED">
+<span class="sig-name descname"><span class="pre">STOPPED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#tv_slider_motor_control.State.STOPPED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tv_slider_motor_control.</span></span><span class="sig-name descname"><span class="pre">TvSliderMotorControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.FAST_SPEED">
+<span class="sig-name descname"><span class="pre">FAST_SPEED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">30000</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.FAST_SPEED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_DIRECTION">
+<span class="sig-name descname"><span class="pre">GPIO_MOTOR_DIRECTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">17</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_DIRECTION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_DISABLE">
+<span class="sig-name descname"><span class="pre">GPIO_MOTOR_DISABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">27</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_DISABLE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_PWM">
+<span class="sig-name descname"><span class="pre">GPIO_MOTOR_PWM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">18</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_MOTOR_PWM" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_IN_END">
+<span class="sig-name descname"><span class="pre">GPIO_SENSOR_IN_END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">21</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_IN_END" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_IN_SLOW">
+<span class="sig-name descname"><span class="pre">GPIO_SENSOR_IN_SLOW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_IN_SLOW" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_OUT_END">
+<span class="sig-name descname"><span class="pre">GPIO_SENSOR_OUT_END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">25</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_OUT_END" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_OUT_SLOW">
+<span class="sig-name descname"><span class="pre">GPIO_SENSOR_OUT_SLOW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">16</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.GPIO_SENSOR_OUT_SLOW" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.SENSOR_STRINGS">
+<span class="sig-name descname"><span class="pre">SENSOR_STRINGS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{16:</span> <span class="pre">'OUT_SLOW',</span> <span class="pre">20:</span> <span class="pre">'IN_SLOW',</span> <span class="pre">21:</span> <span class="pre">'IN_END',</span> <span class="pre">25:</span> <span class="pre">'OUT_END'}</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.SENSOR_STRINGS" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.SLOW_SPEED">
+<span class="sig-name descname"><span class="pre">SLOW_SPEED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8000</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.SLOW_SPEED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.SPEED_RAMP_DOWN_STEP">
+<span class="sig-name descname"><span class="pre">SPEED_RAMP_DOWN_STEP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2500</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.SPEED_RAMP_DOWN_STEP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.SPEED_RAMP_UP_STEP">
+<span class="sig-name descname"><span class="pre">SPEED_RAMP_UP_STEP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2500</span></em><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.SPEED_RAMP_UP_STEP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.direction_get">
+<span class="sig-name descname"><span class="pre">direction_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.direction_get" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.direction_set">
+<span class="sig-name descname"><span class="pre">direction_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.direction_set" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.end">
+<span class="sig-name descname"><span class="pre">end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.end" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.move">
+<span class="sig-name descname"><span class="pre">move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.move" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.position_get">
+<span class="sig-name descname"><span class="pre">position_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.position_get" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.report_position">
+<span class="sig-name descname"><span class="pre">report_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.report_position" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.run_state_machine">
+<span class="sig-name descname"><span class="pre">run_state_machine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.run_state_machine" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.sensors_callback">
+<span class="sig-name descname"><span class="pre">sensors_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.sensors_callback" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.sensors_get">
+<span class="sig-name descname"><span class="pre">sensors_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.sensors_get" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.set_state">
+<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.set_state" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.speed_get">
+<span class="sig-name descname"><span class="pre">speed_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.speed_get" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.speed_set">
+<span class="sig-name descname"><span class="pre">speed_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">speed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.speed_set" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.stop" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tv_slider_motor_control.TvSliderMotorControl.thread_process">
+<span class="sig-name descname"><span class="pre">thread_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tv_slider_motor_control.TvSliderMotorControl.thread_process" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sse_logging.html" class="btn btn-neutral float-left" title="sse_logging module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tv_slider_mqtt.html" class="btn btn-neutral float-right" title="tv_slider_mqtt module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2012-2024, Xander Hendriks.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -7,7 +7,7 @@ API
    :maxdepth: 2
    :caption: Contents:
 
-   apidoc/modules
+   build/apidoc/modules
       
    
 Indices and tables

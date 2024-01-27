@@ -1,0 +1,7 @@
+sse\_logging module
+===================
+
+.. automodule:: sse_logging
+   :members:
+   :undoc-members:
+   :show-inheritance:
