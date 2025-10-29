@@ -1,5 +1,5 @@
 __pycache__
-react-flask-app/api
 docs/build
 *.log
-test_log.txt
+esp32/build
+esp32/sdkconfig.old
