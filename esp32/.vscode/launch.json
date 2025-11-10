@@ -1,41 +1,15 @@
-// {
-//   "version": "0.2.0",
-//   "configurations": [
-//     {
-//       "type": "gdbtarget",
-//       "request": "attach",
-//       "name": "Eclipse CDT GDB Adapter"
-//     },
-//     {
-//       "type": "espidf",
-//       "name": "Launch",
-//       "request": "launch"
-//     }
-//   ]
-// }
 {
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "gdbtarget",
+      "request": "attach",
+      "name": "Eclipse CDT GDB Adapter"
+    },
+    {
       "type": "espidf",
-      "name": "ESP-IDF Debug (USB-JTAG, C6)",
-      "request": "launch",
-      "program": "${workspaceFolder}/build/${command:espIdf.getProjectName}.elf",
-      "openOcdConfigs": [
-        "board/esp32c6-builtin.cfg"
-      ],
-      "toolchainPrefix": "riscv32-esp-elf",
-      "gdb": "${config:idf.toolsPath}/tools/riscv32-esp-elf/esp-14.2.0_*/riscv32-esp-elf/bin/riscv32-esp-elf-gdb",
-      "initGdbCommands": [
-        "set confirm off",
-        "monitor reset halt",
-        "flushregs"
-      ],
-      "postRestartCommands": [
-        "thb app_main",
-        "continue"
-      ],
-      "stopOnEntry": false
+      "name": "Launch",
+      "request": "launch"
     }
   ]
 }

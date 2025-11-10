@@ -3,13 +3,11 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "",
-      "sdkconfigDefaults": [],
-      "sdkconfigFilePath": ""
+      "sdkconfigDefaults": []
     },
     "env": {},
-    "flashBaudRate": "",
     "idfTarget": "esp32c6",
+    "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 1,

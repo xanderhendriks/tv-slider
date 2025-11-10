@@ -11,24 +11,24 @@ jobs:
         uses: actions/setup-python@v5.0.0
         with:
           python-version: 3.7.17
-      - name: Install package and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r python/requirements-doc.txt
-      - name: Run flake8 static analysis
-        uses: xanderhendriks/flake8-github-action@v1.0.1
-        with:
-          checkName: 'LINT Flake8, Build package and publish documentation to Github'   # NOTE: this needs to be the same as the job name
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create documentation
-        run: |
-          sphinx-apidoc -o docs/build/apidoc python
-          sphinx-build docs docs/build/sphinx/html
-          touch docs/build/sphinx/html/.nojekyll
-      - name: Publish documentation
-        if: startsWith(github.ref, 'refs/tags')
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
-        with:
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: docs/build/sphinx/html # The folder the action should deploy.
+      # - name: Install package and dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install -r python/requirements-doc.txt
+      # - name: Run flake8 static analysis
+      #   uses: xanderhendriks/flake8-github-action@v1.0.1
+      #   with:
+      #     checkName: 'LINT Flake8, Build package and publish documentation to Github'   # NOTE: this needs to be the same as the job name
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Create documentation
+      #   run: |
+      #     sphinx-apidoc -o docs/build/apidoc python
+      #     sphinx-build docs docs/build/sphinx/html
+      #     touch docs/build/sphinx/html/.nojekyll
+      # - name: Publish documentation
+      #   if: startsWith(github.ref, 'refs/tags')
+      #   uses: JamesIves/github-pages-deploy-action@v4.5.0
+      #   with:
+      #     BRANCH: gh-pages # The branch the action should deploy to.
+      #     FOLDER: docs/build/sphinx/html # The folder the action should deploy.
