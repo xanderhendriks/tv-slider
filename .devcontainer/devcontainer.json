@@ -25,11 +25,13 @@
                 "[cpp]": {
                     "editor.defaultFormatter": "ms-vscode.cpptools"
                 },
-                "editor.formatOnSave": true
+                "editor.formatOnSave": true,
+                "cmake.configureOnOpen": false
             },
             "extensions": [
                 "espressif.esp-idf-extension",
-                "ms-vscode.cpptools"
+                "ms-vscode.cpptools-extension-pack",
+                "openai.chatgpt"
             ]
         }
     }

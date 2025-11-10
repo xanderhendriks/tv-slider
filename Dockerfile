@@ -3,7 +3,11 @@ FROM espressif/idf:v5.5.1
 USER root
 RUN <<EOF
     apt-get update
-    apt-get install -y locales sudo udev
+    apt-get install -y \
+        clang-format \
+        locales \
+        sudo \
+        udev
     locale-gen en_US.UTF-8
     update-locale LANG=en_US.UTF-8
 EOF
@@ -16,7 +20,7 @@ EOF
 
 USER ubuntu
 
-RUN echo "source /opt/esp/entrypoint.sh" > ~/.bashrc
+RUN echo "source /opt/esp/entrypoint.sh\nset +e" > ~/.bashrc
 
 ENTRYPOINT ["/bin/bash", "-c"]
 SHELL ["/bin/bash", "-c"]
