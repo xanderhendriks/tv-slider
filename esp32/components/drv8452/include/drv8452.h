@@ -31,34 +31,37 @@ extern "C"
 #define DRV8452_MSTEP_32 0x05
 
     typedef struct drv8452_t *drv8452_handle_t;
+    typedef void (*drv8452_fault_callback_t)(drv8452_handle_t handle);
 
     typedef struct
     {
-        ledc_mode_t      pwm_speed_mode;
-        ledc_timer_t     pwm_timer;
-        ledc_channel_t   pwm_channel;
-        ledc_timer_bit_t pwm_duty_resolution;
-        uint32_t         pwm_frequency_hz;
-        uint32_t         initial_pwm_duty;
-        int              pwm_gpio_num;
+        int enable_gpio_num;
+        int direction_gpio_num;
+        int fault_gpio_num;
+        int sleep_gpio_num;
+
+        ledc_timer_t   step_pwm_timer;
+        ledc_channel_t step_pwm_channel;
+        int            step_pwm_gpio_num;
 
         spi_host_device_t spi_host;
-        int               mosi_io_num;
-        int               miso_io_num;
-        int               sclk_io_num;
-        int               cs_io_num;
+        int               spi_mosi_io_num;
+        int               spi_miso_io_num;
+        int               spi_sclk_io_num;
+        int               spi_cs_io_num;
         int               spi_clock_speed_hz;
         uint8_t           spi_mode;
 
-        int      enable_gpio_num;
-        uint32_t enable_pulse_ms;
+        drv8452_fault_callback_t fault_callback;
     } drv8452_config_t;
 
     esp_err_t drv8452_init(const drv8452_config_t *config, drv8452_handle_t *out_handle);
-    esp_err_t drv8452_read_reg(drv8452_handle_t handle, uint8_t addr, uint8_t *val);
-    esp_err_t drv8452_write_reg(drv8452_handle_t handle, uint8_t addr, uint8_t val);
-    esp_err_t drv8452_set_pwm_duty(drv8452_handle_t handle, uint32_t duty);
-    esp_err_t drv8452_enable_output(drv8452_handle_t handle, bool enable);
+    esp_err_t drv8452_register_read(drv8452_handle_t handle, uint8_t addr, uint8_t *val);
+    esp_err_t drv8452_register_write(drv8452_handle_t handle, uint8_t addr, uint8_t val);
+    esp_err_t drv8452_step_frequency(drv8452_handle_t handle, uint32_t frequency_hz);
+    esp_err_t drv8452_enable(drv8452_handle_t handle, bool enable);
+    esp_err_t drv8452_sleep(drv8452_handle_t handle, bool enable);
+    esp_err_t drv8452_direction(drv8452_handle_t handle, bool enable);
 
 #ifdef __cplusplus
 }
