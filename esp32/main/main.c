@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include "console.h"
 #include "drv8452.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -55,29 +56,9 @@ void app_main(void)
 
     ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_MICROSTEP, DRV8452_MSTEP_32));
     ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_TORQUE, 0x40));
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL1, CTRL1_EN_OUT | CTRL1_CLR_FLT));
 
-    ESP_ERROR_CHECK(drv8452_step_frequency(drv8452_handle, 6000));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_step_frequency(drv8452_handle, 0));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_enable(drv8452_handle, true));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_enable(drv8452_handle, false));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, true));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, false));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_direction(drv8452_handle, true));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_direction(drv8452_handle, false));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_step_frequency(drv8452_handle, 200));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(drv8452_step_frequency(drv8452_handle, 0));
-
-    ESP_LOGI(TAG, "Done");
+    ESP_LOGI(TAG, "Starting console...");
+    ESP_ERROR_CHECK(console_start(drv8452_handle));
 
     while (true)
     {
