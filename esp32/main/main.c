@@ -21,7 +21,7 @@ static void IRAM_ATTR drv8452_fault_handler(drv8452_handle_t handle);
 void app_main(void)
 {
     drv8452_handle_t drv8452_handle = NULL;
-    uint8_t          fault          = 0;
+    uint8_t          value          = 0;
     drv8452_config_t drv_cfg        = {
                .step_pwm_timer     = LEDC_TIMER_0,
                .step_pwm_channel   = LEDC_CHANNEL_0,
@@ -45,17 +45,22 @@ void app_main(void)
     ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, false));
     ESP_LOGI(TAG, "DRV8452 driver initialized");
 
-    if (drv8452_register_read(drv8452_handle, DRV8452_REG_FAULT, &fault) == ESP_OK)
+    if (drv8452_register_read(drv8452_handle, DRV8452_REG_FAULT, &value) == ESP_OK)
     {
-        ESP_LOGI(TAG, "DRV8452 fault register: 0x%02X", fault);
+        ESP_LOGI(TAG, "DRV8452 fault register: 0x%02X", value);
     }
     else
     {
         ESP_LOGE(TAG, "Unable to read DRV8452 fault register");
     }
 
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_MICROSTEP, DRV8452_MSTEP_32));
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_TORQUE, 0x40));
+    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_128));
+    ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL4, &value));
+    ESP_LOGI(TAG, "DRV8452 CTRL4 register: 0x%02X", value);
+    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL4, value | DRV8452_CTRL4_EN_STL_EN));
+    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL11, DRV8452_CTRL11_TRQ_DAC_50_PCT));
+
+    ESP_LOGI(TAG, "DRV8452 configured");
 
     ESP_LOGI(TAG, "Starting console...");
     ESP_ERROR_CHECK(console_start(drv8452_handle));
