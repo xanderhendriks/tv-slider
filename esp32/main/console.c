@@ -6,9 +6,11 @@
 #include "argtable3/argtable3.h"
 #include "esp_console.h"
 #include "esp_log.h"
+#include "shaft_encoder.h"
 
 static const char         *TAG = "console";
 static drv8452_handle_t    s_drv_handle;
+static shaft_encoder_handle_t s_encoder_handle;
 static esp_console_repl_t *s_repl;
 
 typedef struct frequency_args
@@ -39,6 +41,7 @@ static esp_err_t register_direction_command(void);
 static esp_err_t register_register_read_command(void);
 static esp_err_t register_register_write_command(void);
 static esp_err_t register_fault_clear_command(void);
+static esp_err_t register_encoder_count_command(void);
 
 static int cmd_enable(int argc, char **argv);
 static int cmd_frequency(int argc, char **argv);
@@ -46,8 +49,9 @@ static int cmd_direction(int argc, char **argv);
 static int cmd_register_read(int argc, char **argv);
 static int cmd_register_write(int argc, char **argv);
 static int cmd_fault_clear(int argc, char **argv);
+static int cmd_encoder_count(int argc, char **argv);
 
-esp_err_t console_start(drv8452_handle_t drv_handle)
+esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t encoder_handle)
 {
     esp_err_t err;
 
@@ -57,6 +61,7 @@ esp_err_t console_start(drv8452_handle_t drv_handle)
     }
 
     s_drv_handle = drv_handle;
+    s_encoder_handle = encoder_handle;
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt                    = "tv_slider>";
@@ -115,6 +120,13 @@ esp_err_t console_start(drv8452_handle_t drv_handle)
         return err;
     }
 
+    err = register_encoder_count_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register encoder_count command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
     err = esp_console_start_repl(s_repl);
     if (err != ESP_OK)
     {
@@ -137,6 +149,19 @@ static esp_err_t register_enable_command(void)
         .hint     = NULL,
         .func     = &cmd_enable,
         .argtable = &s_enable_args,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_encoder_count_command(void)
+{
+    const esp_console_cmd_t cmd = {
+        .command  = "encoder_count",
+        .help     = "Read shaft encoder count",
+        .hint     = NULL,
+        .func     = &cmd_encoder_count,
+        .argtable = NULL,
     };
 
     return esp_console_cmd_register(&cmd);
@@ -429,5 +454,28 @@ static int cmd_fault_clear(int argc, char **argv)
     }
 
     printf("Fault cleared.\n");
+    return 0;
+}
+
+static int cmd_encoder_count(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+
+    if (s_encoder_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Encoder handle is not ready");
+        return 1;
+    }
+
+    int count = 0;
+    esp_err_t err = shaft_encoder_get_count(s_encoder_handle, &count);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to read encoder count (%s)", esp_err_to_name(err));
+        return 1;
+    }
+
+    printf("Encoder count: %d\n", count);
     return 0;
 }

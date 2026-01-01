@@ -182,6 +182,11 @@ extern "C"
 #define DRV8452_CTRL11_TRQ_DAC_25_PCT   0x3F
 #define DRV8452_CTRL11_TRQ_DAC_12_5_PCT 0x1F
 
+/* Control 13 register bit masks */
+#define DRV8452_CTRL13_VREF_INT_EN_DIS  0x00
+#define DRV8452_CTRL13_VREF_INT_EN_EN   0x02
+#define DRV8452_CTRL13_VREF_INT_EN_MASK 0x02
+
     typedef struct drv8452_t *drv8452_handle_t;
     typedef void (*drv8452_fault_callback_t)(drv8452_handle_t handle);
 
