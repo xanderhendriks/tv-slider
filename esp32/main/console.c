@@ -7,10 +7,12 @@
 #include "esp_console.h"
 #include "esp_log.h"
 #include "shaft_encoder.h"
+#include "hall_sensors.h"
 
 static const char         *TAG = "console";
 static drv8452_handle_t    s_drv_handle;
 static shaft_encoder_handle_t s_encoder_handle;
+static hall_sensors_handle_t  s_hall_handle;
 static esp_console_repl_t *s_repl;
 
 typedef struct frequency_args
@@ -42,6 +44,7 @@ static esp_err_t register_register_read_command(void);
 static esp_err_t register_register_write_command(void);
 static esp_err_t register_fault_clear_command(void);
 static esp_err_t register_encoder_count_command(void);
+static esp_err_t register_hall_state_command(void);
 
 static int cmd_enable(int argc, char **argv);
 static int cmd_frequency(int argc, char **argv);
@@ -50,8 +53,11 @@ static int cmd_register_read(int argc, char **argv);
 static int cmd_register_write(int argc, char **argv);
 static int cmd_fault_clear(int argc, char **argv);
 static int cmd_encoder_count(int argc, char **argv);
+static int cmd_hall_state(int argc, char **argv);
 
-esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t encoder_handle)
+esp_err_t console_start(drv8452_handle_t drv_handle,
+                        shaft_encoder_handle_t encoder_handle,
+                        hall_sensors_handle_t hall_handle)
 {
     esp_err_t err;
 
@@ -62,6 +68,7 @@ esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t enco
 
     s_drv_handle = drv_handle;
     s_encoder_handle = encoder_handle;
+    s_hall_handle = hall_handle;
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt                    = "tv_slider>";
@@ -127,6 +134,13 @@ esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t enco
         return err;
     }
 
+    err = register_hall_state_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register hall_state command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
     err = esp_console_start_repl(s_repl);
     if (err != ESP_OK)
     {
@@ -149,6 +163,19 @@ static esp_err_t register_enable_command(void)
         .hint     = NULL,
         .func     = &cmd_enable,
         .argtable = &s_enable_args,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_hall_state_command(void)
+{
+    const esp_console_cmd_t cmd = {
+        .command  = "hall_state",
+        .help     = "Read hall sensor state bitmask",
+        .hint     = NULL,
+        .func     = &cmd_hall_state,
+        .argtable = NULL,
     };
 
     return esp_console_cmd_register(&cmd);
@@ -477,5 +504,33 @@ static int cmd_encoder_count(int argc, char **argv)
     }
 
     printf("Encoder count: %d\n", count);
+    return 0;
+}
+
+static int cmd_hall_state(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+
+    if (s_hall_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Hall sensors handle is not ready");
+        return 1;
+    }
+
+    uint8_t state = 0;
+    esp_err_t err = hall_sensors_get_state(s_hall_handle, &state);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to read hall state (%s)", esp_err_to_name(err));
+        return 1;
+    }
+
+    printf("Hall state mask: 0x%02X (IN_STOP=%u IN_SLOW=%u OUT_SLOW=%u OUT_STOP=%u)\n",
+           state,
+           (state >> HALL_SENSOR_IN_STOP) & 1u,
+           (state >> HALL_SENSOR_IN_SLOW) & 1u,
+           (state >> HALL_SENSOR_OUT_SLOW) & 1u,
+           (state >> HALL_SENSOR_OUT_STOP) & 1u);
     return 0;
 }

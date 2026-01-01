@@ -12,17 +12,20 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
+#include "hall_sensors.h"
 #include "shaft_encoder.h"
 #include "system.h"
 
 static const char *TAG = "main";
 
-static void IRAM_ATTR drv8452_fault_handler(drv8452_handle_t handle);
+static void drv8452_fault_handler(drv8452_handle_t handle);
+static void hall_sensor_handler(hall_sensor_t sensor, void *user_ctx);
 
 void app_main(void)
 {
     drv8452_handle_t       drv8452_handle = NULL;
     shaft_encoder_handle_t encoder_handle = NULL;
+    hall_sensors_handle_t  hall_handle    = NULL;
     uint8_t                value          = 0;
     drv8452_config_t       drv_cfg        = {
                      .step_pwm_timer     = LEDC_TIMER_0,
@@ -48,14 +51,31 @@ void app_main(void)
         .glitch_filter_ns   = 0,
         .invert_direction   = false,
     };
+    hall_sensors_config_t hall_cfg = {
+        .in_stop_gpio_num  = 15,
+        .in_slow_gpio_num  = 23,
+        .out_slow_gpio_num = 22,
+        .out_stop_gpio_num = 21,
+        .active_low        = true,
+        .pull_up_enable    = true,
+        .pull_down_enable  = false,
+        .callback          = hall_sensor_handler,
+        .user_ctx          = NULL,
+    };
 
     system_init();
 
     ESP_ERROR_CHECK(drv8452_init(&drv_cfg, &drv8452_handle));
-    ESP_ERROR_CHECK(shaft_encoder_init(&encoder_cfg, &encoder_handle));
-    ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, false));
     ESP_LOGI(TAG, "DRV8452 driver initialized");
+
+    ESP_ERROR_CHECK(shaft_encoder_init(&encoder_cfg, &encoder_handle));
     ESP_LOGI(TAG, "Shaft encoder initialized");
+
+    ESP_ERROR_CHECK(hall_sensors_init(&hall_cfg, &hall_handle));
+    ESP_LOGI(TAG, "Hall sensors initialized");
+
+    ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, false));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     if (drv8452_register_read(drv8452_handle, DRV8452_REG_FAULT, &value) == ESP_OK)
     {
@@ -78,7 +98,7 @@ void app_main(void)
     ESP_LOGI(TAG, "DRV8452 configured");
 
     ESP_LOGI(TAG, "Starting console...");
-    ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle));
+    ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle, hall_handle));
 
     while (true)
     {
@@ -86,8 +106,34 @@ void app_main(void)
     }
 }
 
-static void drv8452_fault_handler(drv8452_handle_t handle)
+static IRAM_ATTR void drv8452_fault_handler(drv8452_handle_t handle)
 {
     (void) handle;
     esp_rom_printf("DRV8452 fault interrupt\n");
+}
+
+static void IRAM_ATTR hall_sensor_handler(hall_sensor_t sensor, void *user_ctx)
+{
+    (void) user_ctx;
+    const char *name = "UNKNOWN";
+
+    switch (sensor)
+    {
+        case HALL_SENSOR_IN_STOP:
+            name = "IN_STOP";
+            break;
+        case HALL_SENSOR_IN_SLOW:
+            name = "IN_SLOW";
+            break;
+        case HALL_SENSOR_OUT_SLOW:
+            name = "OUT_SLOW";
+            break;
+        case HALL_SENSOR_OUT_STOP:
+            name = "OUT_STOP";
+            break;
+        default:
+            break;
+    }
+
+    esp_rom_printf("Hall sensor triggered: %s\n", name);
 }
