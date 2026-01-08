@@ -192,7 +192,6 @@ extern "C"
 
     typedef struct
     {
-        int enable_gpio_num;
         int direction_gpio_num;
         int fault_gpio_num;
         int sleep_gpio_num;
@@ -216,7 +215,6 @@ extern "C"
     esp_err_t drv8452_register_read(drv8452_handle_t handle, uint8_t addr, uint8_t *val);
     esp_err_t drv8452_register_write(drv8452_handle_t handle, uint8_t addr, uint8_t val);
     esp_err_t drv8452_step_frequency(drv8452_handle_t handle, uint32_t frequency_hz);
-    esp_err_t drv8452_enable(drv8452_handle_t handle, bool enable);
     esp_err_t drv8452_sleep(drv8452_handle_t handle, bool enable);
     esp_err_t drv8452_direction(drv8452_handle_t handle, bool enable);
 

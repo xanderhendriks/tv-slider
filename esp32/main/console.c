@@ -6,14 +6,15 @@
 #include "argtable3/argtable3.h"
 #include "esp_console.h"
 #include "esp_log.h"
-#include "shaft_encoder.h"
 #include "hall_sensors.h"
+#include "shaft_encoder.h"
 
-static const char         *TAG = "console";
-static drv8452_handle_t    s_drv_handle;
+static const char            *TAG = "console";
+static drv8452_handle_t       s_drv_handle;
 static shaft_encoder_handle_t s_encoder_handle;
 static hall_sensors_handle_t  s_hall_handle;
-static esp_console_repl_t *s_repl;
+static led_handle_t           s_led_handle;
+static esp_console_repl_t    *s_repl;
 
 typedef struct frequency_args
 {
@@ -33,9 +34,18 @@ typedef struct direction_args
     struct arg_end *end;
 } direction_args_t;
 
+typedef struct led_args
+{
+    struct arg_int *red;
+    struct arg_int *green;
+    struct arg_int *blue;
+    struct arg_end *end;
+} led_args_t;
+
 static frequency_args_t s_frequency_args;
 static enable_args_t    s_enable_args;
 static direction_args_t s_direction_args;
+static led_args_t       s_led_args;
 
 static esp_err_t register_enable_command(void);
 static esp_err_t register_frequency_command(void);
@@ -45,6 +55,8 @@ static esp_err_t register_register_write_command(void);
 static esp_err_t register_fault_clear_command(void);
 static esp_err_t register_encoder_count_command(void);
 static esp_err_t register_hall_state_command(void);
+static esp_err_t register_led_command(void);
+static esp_err_t register_led_clear_command(void);
 
 static int cmd_enable(int argc, char **argv);
 static int cmd_frequency(int argc, char **argv);
@@ -54,10 +66,11 @@ static int cmd_register_write(int argc, char **argv);
 static int cmd_fault_clear(int argc, char **argv);
 static int cmd_encoder_count(int argc, char **argv);
 static int cmd_hall_state(int argc, char **argv);
+static int cmd_led(int argc, char **argv);
+static int cmd_led_clear(int argc, char **argv);
 
-esp_err_t console_start(drv8452_handle_t drv_handle,
-                        shaft_encoder_handle_t encoder_handle,
-                        hall_sensors_handle_t hall_handle)
+esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t encoder_handle,
+                        hall_sensors_handle_t hall_handle, led_handle_t led_handle)
 {
     esp_err_t err;
 
@@ -66,9 +79,10 @@ esp_err_t console_start(drv8452_handle_t drv_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    s_drv_handle = drv_handle;
+    s_drv_handle     = drv_handle;
     s_encoder_handle = encoder_handle;
-    s_hall_handle = hall_handle;
+    s_hall_handle    = hall_handle;
+    s_led_handle     = led_handle;
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt                    = "tv_slider>";
@@ -141,6 +155,20 @@ esp_err_t console_start(drv8452_handle_t drv_handle,
         return err;
     }
 
+    err = register_led_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register led command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    err = register_led_clear_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register led_clear command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
     err = esp_console_start_repl(s_repl);
     if (err != ESP_OK)
     {
@@ -175,6 +203,37 @@ static esp_err_t register_hall_state_command(void)
         .help     = "Read hall sensor state bitmask",
         .hint     = NULL,
         .func     = &cmd_hall_state,
+        .argtable = NULL,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_led_command(void)
+{
+    s_led_args.red   = arg_int1(NULL, NULL, "<red>", "Red value 0-255");
+    s_led_args.green = arg_int1(NULL, NULL, "<green>", "Green value 0-255");
+    s_led_args.blue  = arg_int1(NULL, NULL, "<blue>", "Blue value 0-255");
+    s_led_args.end   = arg_end(4);
+
+    const esp_console_cmd_t cmd = {
+        .command  = "led",
+        .help     = "Set LED color: led <red> <green> <blue>",
+        .hint     = NULL,
+        .func     = &cmd_led,
+        .argtable = &s_led_args,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_led_clear_command(void)
+{
+    const esp_console_cmd_t cmd = {
+        .command  = "led_clear",
+        .help     = "Clear the LED strip",
+        .hint     = NULL,
+        .func     = &cmd_led_clear,
         .argtable = NULL,
     };
 
@@ -484,6 +543,64 @@ static int cmd_fault_clear(int argc, char **argv)
     return 0;
 }
 
+static int cmd_led(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &s_led_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, s_led_args.end, argv[0]);
+        return 1;
+    }
+
+    if (s_led_handle == NULL)
+    {
+        ESP_LOGE(TAG, "LED handle is not ready");
+        return 1;
+    }
+
+    int red   = s_led_args.red->ival[0];
+    int green = s_led_args.green->ival[0];
+    int blue  = s_led_args.blue->ival[0];
+
+    if (red < 0 || red > 255 || green < 0 || green > 255 || blue < 0 || blue > 255)
+    {
+        printf("RGB values must be 0-255\n");
+        return 1;
+    }
+
+    esp_err_t err = led_set_pixel(s_led_handle, (uint8_t) red, (uint8_t) green, (uint8_t) blue);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to set LED pixel (%s)", esp_err_to_name(err));
+        return 1;
+    }
+
+    printf("LED set to R=%d G=%d B=%d\n", red, green, blue);
+    return 0;
+}
+
+static int cmd_led_clear(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+
+    if (s_led_handle == NULL)
+    {
+        ESP_LOGE(TAG, "LED handle is not ready");
+        return 1;
+    }
+
+    esp_err_t err = led_clear(s_led_handle);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to clear LED (%s)", esp_err_to_name(err));
+        return 1;
+    }
+
+    printf("LED cleared\n");
+    return 0;
+}
+
 static int cmd_encoder_count(int argc, char **argv)
 {
     (void) argc;
@@ -495,8 +612,8 @@ static int cmd_encoder_count(int argc, char **argv)
         return 1;
     }
 
-    int count = 0;
-    esp_err_t err = shaft_encoder_get_count(s_encoder_handle, &count);
+    int       count = 0;
+    esp_err_t err   = shaft_encoder_get_count(s_encoder_handle, &count);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to read encoder count (%s)", esp_err_to_name(err));
@@ -518,19 +635,16 @@ static int cmd_hall_state(int argc, char **argv)
         return 1;
     }
 
-    uint8_t state = 0;
-    esp_err_t err = hall_sensors_get_state(s_hall_handle, &state);
+    uint8_t   state = 0;
+    esp_err_t err   = hall_sensors_get_state(s_hall_handle, &state);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to read hall state (%s)", esp_err_to_name(err));
         return 1;
     }
 
-    printf("Hall state mask: 0x%02X (IN_STOP=%u IN_SLOW=%u OUT_SLOW=%u OUT_STOP=%u)\n",
-           state,
-           (state >> HALL_SENSOR_IN_STOP) & 1u,
-           (state >> HALL_SENSOR_IN_SLOW) & 1u,
-           (state >> HALL_SENSOR_OUT_SLOW) & 1u,
-           (state >> HALL_SENSOR_OUT_STOP) & 1u);
+    printf("Hall state mask: 0x%02X (IN_STOP=%u IN_SLOW=%u OUT_SLOW=%u OUT_STOP=%u)\n", state,
+           (state >> HALL_SENSOR_IN_STOP) & 1u, (state >> HALL_SENSOR_IN_SLOW) & 1u,
+           (state >> HALL_SENSOR_OUT_SLOW) & 1u, (state >> HALL_SENSOR_OUT_STOP) & 1u);
     return 0;
 }

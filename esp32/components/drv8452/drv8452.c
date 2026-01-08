@@ -51,7 +51,6 @@ esp_err_t drv8452_init(const drv8452_config_t *config, drv8452_handle_t *out_han
     ctx->step_pwm_mode        = LEDC_LOW_SPEED_MODE;
     ctx->step_pwm_channel     = config->step_pwm_channel;
     ctx->step_pwm_timer       = config->step_pwm_timer;
-    ctx->enable_gpio_num      = config->enable_gpio_num;
     ctx->sleep_gpio_num       = config->sleep_gpio_num;
     ctx->direction_gpio_num   = config->direction_gpio_num;
     ctx->fault_gpio_num       = config->fault_gpio_num;
@@ -182,23 +181,6 @@ esp_err_t drv8452_step_frequency(drv8452_handle_t handle, uint32_t frequency_hz)
     return ESP_OK;
 }
 
-esp_err_t drv8452_enable(drv8452_handle_t handle, bool enable)
-{
-    drv8452_ctx_t *ctx = handle;
-
-    if (!handle)
-    {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (ctx->enable_gpio_num < 0)
-    {
-        return ESP_OK;
-    }
-
-    return gpio_set_level(ctx->enable_gpio_num, enable ? 1 : 0);
-}
-
 esp_err_t drv8452_sleep(drv8452_handle_t handle, bool enable)
 {
     drv8452_ctx_t *ctx = handle;
@@ -235,26 +217,6 @@ esp_err_t drv8452_direction(drv8452_handle_t handle, bool enable)
 static esp_err_t drv8452_init_gpio(const drv8452_config_t *config, drv8452_ctx_t *ctx)
 {
     esp_err_t err;
-
-    if (config->enable_gpio_num >= 0)
-    {
-        gpio_config_t io_conf = {
-            .pin_bit_mask = (1ULL << config->enable_gpio_num),
-            .mode         = GPIO_MODE_OUTPUT,
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .pull_up_en   = GPIO_PULLUP_DISABLE,
-            .intr_type    = GPIO_INTR_DISABLE,
-        };
-
-        err = gpio_config(&io_conf);
-        if (err != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to init enable GPIO (%d)", err);
-            return err;
-        }
-
-        gpio_set_level(config->enable_gpio_num, 0);
-    }
 
     if (config->direction_gpio_num >= 0)
     {

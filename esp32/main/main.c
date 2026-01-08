@@ -13,6 +13,7 @@
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "hall_sensors.h"
+#include "led.h"
 #include "shaft_encoder.h"
 #include "system.h"
 
@@ -26,19 +27,19 @@ void app_main(void)
     drv8452_handle_t       drv8452_handle = NULL;
     shaft_encoder_handle_t encoder_handle = NULL;
     hall_sensors_handle_t  hall_handle    = NULL;
+    led_handle_t           led_handle     = NULL;
     uint8_t                value          = 0;
     drv8452_config_t       drv_cfg        = {
                      .step_pwm_timer     = LEDC_TIMER_0,
                      .step_pwm_channel   = LEDC_CHANNEL_0,
-                     .step_pwm_gpio_num  = 1,
+                     .step_pwm_gpio_num  = 0,
                      .spi_host           = SPI2_HOST,
                      .spi_mosi_io_num    = 10,
                      .spi_miso_io_num    = 11,
-                     .spi_sclk_io_num    = 8,
+                     .spi_sclk_io_num    = 1,
                      .spi_cs_io_num      = 2,
                      .spi_clock_speed_hz = 1e6,
-                     .enable_gpio_num    = 7,
-                     .direction_gpio_num = 0,
+                     .direction_gpio_num = 7,
                      .fault_gpio_num     = 3,
                      .sleep_gpio_num     = 6,
                      .fault_callback     = drv8452_fault_handler,
@@ -64,6 +65,9 @@ void app_main(void)
     };
 
     system_init();
+
+    ESP_ERROR_CHECK(led_init(&led_handle));
+    ESP_LOGI(TAG, "LED initialized");
 
     ESP_ERROR_CHECK(drv8452_init(&drv_cfg, &drv8452_handle));
     ESP_LOGI(TAG, "DRV8452 driver initialized");
@@ -98,7 +102,7 @@ void app_main(void)
     ESP_LOGI(TAG, "DRV8452 configured");
 
     ESP_LOGI(TAG, "Starting console...");
-    ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle, hall_handle));
+    ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle, hall_handle, led_handle));
 
     while (true)
     {
