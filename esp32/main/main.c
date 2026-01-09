@@ -14,6 +14,7 @@
 #include "esp_rom_sys.h"
 #include "hall_sensors.h"
 #include "led.h"
+#include "provisioning.h"
 #include "shaft_encoder.h"
 #include "system.h"
 
@@ -65,6 +66,7 @@ void app_main(void)
     };
 
     system_init();
+    ble_provisioning_start();
 
     ESP_ERROR_CHECK(led_init(&led_handle));
     ESP_LOGI(TAG, "LED initialized");
