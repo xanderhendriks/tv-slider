@@ -86,22 +86,24 @@ void app_main(void)
     if (drv8452_register_read(drv8452_handle, DRV8452_REG_FAULT, &value) == ESP_OK)
     {
         ESP_LOGI(TAG, "DRV8452 fault register: 0x%02X", value);
+
+        ESP_ERROR_CHECK(
+            drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_128));
+        ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL4, &value));
+        ESP_LOGI(TAG, "DRV8452 CTRL4 register: 0x%02X", value);
+        ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL4, value | DRV8452_CTRL4_EN_STL_EN));
+        ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL11, DRV8452_CTRL11_TRQ_DAC_37_5_PCT));
+        ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL13, &value));
+        ESP_LOGI(TAG, "DRV8452 CTRL13 register: 0x%02X", value);
+        ESP_ERROR_CHECK(
+            drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL13, value | DRV8452_CTRL13_VREF_INT_EN_EN));
+
+        ESP_LOGI(TAG, "DRV8452 configured");
     }
     else
     {
         ESP_LOGE(TAG, "Unable to read DRV8452 fault register");
     }
-
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_128));
-    ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL4, &value));
-    ESP_LOGI(TAG, "DRV8452 CTRL4 register: 0x%02X", value);
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL4, value | DRV8452_CTRL4_EN_STL_EN));
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL11, DRV8452_CTRL11_TRQ_DAC_37_5_PCT));
-    ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL13, &value));
-    ESP_LOGI(TAG, "DRV8452 CTRL13 register: 0x%02X", value);
-    ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL13, value | DRV8452_CTRL13_VREF_INT_EN_EN));
-
-    ESP_LOGI(TAG, "DRV8452 configured");
 
     ESP_LOGI(TAG, "Starting console...");
     ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle, hall_handle, led_handle));
