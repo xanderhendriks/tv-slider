@@ -9,6 +9,7 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
+#include "app_mqtt.h"
 #include "webserver.h"
 #include "wifi_provisioning/manager.h"
 #include "wifi_provisioning/scheme_ble.h"
@@ -70,6 +71,7 @@ static void provisioning_event_handler(void *arg, esp_event_base_t event_base, i
         ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         webserver_start();
+        mqtt_client_start();
         return;
     }
 }

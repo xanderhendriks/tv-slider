@@ -14,6 +14,7 @@
 #include "esp_rom_sys.h"
 #include "hall_sensors.h"
 #include "led.h"
+#include "app_mqtt.h"
 #include "provisioning.h"
 #include "shaft_encoder.h"
 #include "system.h"
@@ -22,6 +23,7 @@ static const char *TAG = "main";
 
 static void drv8452_fault_handler(drv8452_handle_t handle);
 static void hall_sensor_handler(hall_sensor_t sensor, void *user_ctx);
+static void mqtt_switch_handler(bool on, void *user_ctx);
 
 void app_main(void)
 {
@@ -66,6 +68,7 @@ void app_main(void)
     };
 
     system_init();
+    mqtt_client_init(mqtt_switch_handler, NULL);
     ble_provisioning_start();
 
     ESP_ERROR_CHECK(led_init(&led_handle));
@@ -144,4 +147,10 @@ static void IRAM_ATTR hall_sensor_handler(hall_sensor_t sensor, void *user_ctx)
     }
 
     esp_rom_printf("Hall sensor triggered: %s\n", name);
+}
+
+static void mqtt_switch_handler(bool on, void *user_ctx)
+{
+    (void) user_ctx;
+    ESP_LOGI(TAG, "MQTT switch update: %s", on ? "on" : "off");
 }
