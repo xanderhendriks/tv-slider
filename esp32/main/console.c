@@ -2,11 +2,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "argtable3/argtable3.h"
+#include "driver/uart.h"
 #include "esp_console.h"
 #include "esp_log.h"
+#include "esp_vfs.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
 #include "hall_sensors.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include "sdkconfig.h"
 #include "shaft_encoder.h"
 
 static const char            *TAG = "console";
@@ -68,6 +79,16 @@ static int cmd_encoder_count(int argc, char **argv);
 static int cmd_hall_state(int argc, char **argv);
 static int cmd_led(int argc, char **argv);
 static int cmd_led_clear(int argc, char **argv);
+static void tcp_console_start(void);
+static void tcp_console_task(void *arg);
+static void tcp_console_install_stdout(void);
+static int tcp_console_open(const char *path, int flags, int mode);
+static int tcp_console_close(int fd);
+static ssize_t tcp_console_write(int fd, const void *data, size_t size);
+static int tcp_console_fstat(int fd, struct stat *st);
+
+static int                   s_tcp_client_fd = -1;
+static SemaphoreHandle_t     s_tcp_client_lock;
 
 esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t encoder_handle,
                         hall_sensors_handle_t hall_handle, led_handle_t led_handle)
@@ -176,8 +197,218 @@ esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t enco
         return err;
     }
 
+    tcp_console_install_stdout();
+    tcp_console_start();
+
     ESP_LOGI(TAG, "Console ready. Type 'help' to list commands.");
     return ESP_OK;
+}
+
+static void tcp_console_start(void)
+{
+    const uint32_t stack_size = 4096;
+    s_tcp_client_lock         = xSemaphoreCreateMutex();
+    if (xTaskCreate(tcp_console_task, "tcp_console", stack_size, NULL, 4, NULL) != pdPASS)
+    {
+        ESP_LOGW(TAG, "Failed to start TCP console task");
+    }
+}
+
+static void tcp_console_install_stdout(void)
+{
+    static const esp_vfs_t vfs = {
+        .flags = ESP_VFS_FLAG_DEFAULT,
+        .write = tcp_console_write,
+        .open  = tcp_console_open,
+        .close = tcp_console_close,
+        .fstat = tcp_console_fstat,
+    };
+
+    if (esp_vfs_register("/dev/tcpcon", &vfs, NULL) != ESP_OK)
+    {
+        ESP_LOGW(TAG, "Failed to register TCP console VFS");
+        return;
+    }
+
+    freopen("/dev/tcpcon", "w", stdout);
+    freopen("/dev/tcpcon", "w", stderr);
+    setvbuf(stdout, NULL, _IOLBF, 0);
+}
+
+static int tcp_console_open(const char *path, int flags, int mode)
+{
+    (void) path;
+    (void) flags;
+    (void) mode;
+    return 0;
+}
+
+static int tcp_console_close(int fd)
+{
+    (void) fd;
+    return 0;
+}
+
+static ssize_t tcp_console_write(int fd, const void *data, size_t size)
+{
+    (void) fd;
+
+    if (data && size > 0)
+    {
+        uart_write_bytes(CONFIG_ESP_CONSOLE_UART_NUM, data, size);
+    }
+
+    if (data && size > 0 && s_tcp_client_lock && xSemaphoreTake(s_tcp_client_lock, 0) == pdTRUE)
+    {
+        int sock = s_tcp_client_fd;
+        xSemaphoreGive(s_tcp_client_lock);
+        if (sock >= 0)
+        {
+            send(sock, data, size, 0);
+        }
+    }
+
+    return size;
+}
+
+static int tcp_console_fstat(int fd, struct stat *st)
+{
+    (void) fd;
+    if (!st)
+    {
+        return -1;
+    }
+    st->st_mode = S_IFCHR;
+    return 0;
+}
+
+static void tcp_console_task(void *arg)
+{
+    (void) arg;
+
+    const int port = 23;
+    int       listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if (listen_sock < 0)
+    {
+        ESP_LOGE(TAG, "TCP socket create failed");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    int opt = 1;
+    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    struct sockaddr_in addr = {
+        .sin_family      = AF_INET,
+        .sin_port        = htons(port),
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+    };
+
+    if (bind(listen_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+    {
+        ESP_LOGE(TAG, "TCP bind failed");
+        close(listen_sock);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    if (listen(listen_sock, 1) < 0)
+    {
+        ESP_LOGE(TAG, "TCP listen failed");
+        close(listen_sock);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    ESP_LOGI(TAG, "TCP console listening on port %d", port);
+
+    while (true)
+    {
+        struct sockaddr_in6 source_addr;
+        socklen_t addr_len = sizeof(source_addr);
+        int  sock     = accept(listen_sock, (struct sockaddr *) &source_addr, &addr_len);
+        if (sock < 0)
+        {
+            ESP_LOGW(TAG, "TCP accept failed");
+            continue;
+        }
+
+        if (s_tcp_client_lock && xSemaphoreTake(s_tcp_client_lock, portMAX_DELAY) == pdTRUE)
+        {
+            s_tcp_client_fd = sock;
+            xSemaphoreGive(s_tcp_client_lock);
+        }
+
+        const char *banner = "Connected to tv_slider console\r\nType 'help' for commands.\r\n";
+        send(sock, banner, strlen(banner), 0);
+
+        char line[128];
+        int  len = 0;
+        send(sock, "tv_slider> ", 11, 0);
+
+        while (true)
+        {
+            unsigned char ch = 0;
+            int           r  = recv(sock, &ch, 1, 0);
+            if (r <= 0)
+            {
+                break;
+            }
+
+            if (ch == 0xFF)
+            {
+                unsigned char ignore[2];
+                recv(sock, ignore, sizeof(ignore), 0);
+                continue;
+            }
+
+            if (ch == '\r' || ch == '\n')
+            {
+                line[len] = '\0';
+                if (len > 0)
+                {
+                    int cmd_ret = 0;
+                    esp_err_t err = esp_console_run(line, &cmd_ret);
+                    if (err == ESP_OK && cmd_ret == ESP_OK)
+                    {
+                        send(sock, "OK\r\n", 4, 0);
+                    }
+                    else
+                    {
+                        send(sock, "ERR\r\n", 5, 0);
+                    }
+                    len = 0;
+                }
+                send(sock, "tv_slider> ", 11, 0);
+                continue;
+            }
+
+            if (ch == '\b' || ch == 0x7F)
+            {
+                if (len > 0)
+                {
+                    len--;
+                }
+                continue;
+            }
+
+            if (len < (int) (sizeof(line) - 1))
+            {
+                line[len++] = (char) ch;
+            }
+        }
+
+        shutdown(sock, 0);
+        close(sock);
+        if (s_tcp_client_lock && xSemaphoreTake(s_tcp_client_lock, portMAX_DELAY) == pdTRUE)
+        {
+            if (s_tcp_client_fd == sock)
+            {
+                s_tcp_client_fd = -1;
+            }
+            xSemaphoreGive(s_tcp_client_lock);
+        }
+    }
 }
 
 static esp_err_t register_enable_command(void)
