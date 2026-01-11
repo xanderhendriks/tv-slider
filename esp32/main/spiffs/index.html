@@ -1,43 +1,207 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
+<head>
+    <link href="stylesheets/nxs.css" rel="stylesheet" type="text/css">
+    <link href="stylesheets/tabs.css" rel="stylesheet" type="text/css">
     <title>TV Slider</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <script src="javascript/jquery-1.12.4.min.js"></script>
+    <script src="javascript/configuration.js"></script>
+    <script src="javascript/tabs.js"></script>
+    <script>
+        function load_configuration() {
+            configuration_url = '/Configuration/Get?pt_selection&pc_ip_address&pc_port&gps_udp_port&gps_udp_ip_address&ot_startup_mode&rx_return_mode'
+            configuration_url += '&sh_serial_number1&sh_serial_number2&sh_serial_number3&sh_serial_number4&sh_enable1&sh_enable2&sh_enable3&sh_enable4'
+            configuration_url += '&net_address_mode&net_ip_address&net_subnet_mask&net_gateway&net_dns_server'
+            configuration_url += '&mfn_part_number&mfn_serial_number&mfn_part_revision&firmware_ps_version&sh_motor_speed1&sh_motor_speed2&sh_motor_speed3&sh_motor_speed4'
+            // unset flag to indicate configuration retrieval is pending
+            conf_complete = false;
+            load_to_select('pt_selection_selector', playtable_pattern, get_configuration)
+            // incase reload is executed and there are unsaved changes in the system.
+            document.getElementById("you_have_unsaved_changes_panel").style.display = "none";
+        }
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+        function option_formatter(field, value) {
+            if (field == "pt_selection_selector") {
+                let matches = playtable_pattern.exec(value);
+                return matches[1];
+            }
+            else {
+                return value;
+            }
+        }
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+        $(document).ready(function () {
+            update_status_start();
+            load_configuration();
+
+            // UI bindings for sensorheads
+            for (var sensorhead_id = 1; sensorhead_id <= 4; sensorhead_id++) {
+                let id = sensorhead_id;
+
+                // auto hide panel
+                $("#sh_serial_number" + id + ", #sh_enable" + id).on("change", function () {
+                    let displayed = ($("#sh_serial_number" + id).html().trim() != '0') || ($("#sh_enable" + id + "_checkbox").prop("checked") == true);
+                    $("#sh" + id + "_panel").toggle(displayed);
+                });
+
+                $("#sh_enable" + id + "_checkbox").on("click", function () {
+                    if ($(this).prop("checked") == true) {
+                        $("#sh_enable" + id).val("enabled");
+                    }
+                    else {
+                        $("#sh_enable" + id).val("disabled");
+                    }
+                });
+            }
+
+            // UI bindings for playtables
+            $("#pt_selection_selector").on("change", function () {
+                pt_touched = true;
+                $("#pt_selection").val($(this).val());
+            });
+
+            $('#firmware_ps_version').on("change", function () {
+                if ($(this).text().match(/.*(\dch)? [a-z]+/)) {
+                    document.body.className += ' ' + 'dark';
+                }
+            });
+        });
+    </script>
+    <script src="javascript/unsaved_changes.js"></script>
+</head>
+
+<body>
+    <table border="0" cellpadding="0" cellspacing="0" width="600" height="80" align="center">
+        <tr>
+            <td width="204" height="60">
+                <div width="204" height="60" style="min-width: 204px">
+                    <img src="images/nxs_logo.png" alt="NX Solutions Logo" height="60" style="float:left">
+                </div>
+            </td>
+            <td style="font-size: 30px; font-weight: bold; clear: both; color: #2980B9" align="center">
+                TV-Slider
+            </td>
+            <td width="204">
+            </td>
+        </tr>
+        <tr height="20">
+        </tr>
+    </table>
+
+    <table width="600" align="center">
+        <tr>
+            <td colspan="2">
+
+                <ul class="tab">
+                    <li><a href="#" class="tablinks active" onclick="openTab(event, 'Control')">Control</a></li>
+                    <li><a href="#" class="tablinks" onclick="openTab(event, 'Info')">Info</a></li>
+                    <li><a href="#" class="tablinks" onclick="openTab(event, 'Update')">Update</a></li>
+                </ul>
+
+                <div id="Control" class="tabcontent" style="display:block">
+                    <table width="600" height="300" align="center">
+                        <tr>
+                            <td align="center">
+                                <div>
+                                    <img src="images/unknown_tv.png" alt="TV Status">
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div id="Info" class="tabcontent">
+                    <table width="600" height="300" align="center">
+                        <tr height="10">
+                            <td>
+                                Part Number
+                            </td>
+                            <td>
+                                <div id="mfn_part_number" length="7"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>
+                                Part Revision
+                            </td>
+                            <td>
+                                <div id="mfn_part_revision" length="3"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>
+                                Serial Number
+                            </td>
+                            <td>
+                                <div id="mfn_serial_number" length="10"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>
+                                Software Version
+                            </td>
+                            <td>
+                                <div id="firmware_ps_version"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                        </tr>
+                    </table>
+                </div>
+
+                <div id="Update" class="tabcontent">
+                    <table width="600" height="300" align="center">
+                        <tr height="10">
+                            <td style="margin-right: 10px">
+                                <label>Firmware Upgrade</label>
+                            </td>
+                            <td style='text-align: center'>
+                                <div style="padding: 10px; border: 1px dotted black; width: 400px; height: 120px; vertical-align: middle"
+                                    id="firmware_upgrade_panel">
+                                    <blockquote id="firmware_upgrade_panel_progress">Do not interrupt the upgrade
+                                        process.</blockquote>
+                                    <div id="firmware_upgrade_panel_form">
+                                        <hr />
+                                        <form enctype="multipart/form-data" method="post" id="firmware_upgrade_form"
+                                            onsubmit="upload_firmware(upload_firmware_progress, upgrade_firmware_success); return false"
+                                            autocomplete="off">
+                                            <input type="file" id="firmware_upgrade_input" accept=".bin">
+                                            <input type="submit" value="Flash" />
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                        </tr>
+                    </table>
+                </div>
+
+            </td>
+        </tr>
+        <tr height="30">
+            <td style="text-align:left">
+                <button onclick="save_configuration()">Save</button>
+            </td>
+            <td style="text-align:right">
+                <button onclick="load_configuration()">Reload</button>
+            </td>
+        </tr>
+    </table>
+
+    <table border="0" cellpadding="0" cellspacing="0" width="600" height="25" align="center">
+        <tr>
+            <td style="font-size: 12px;" align="center">
+                Copyright NX Solutions 2026
+            </td>
+        </tr>
+    </table>
+
+    <div id="you_have_unsaved_changes_panel"
+        style="display: none; top: 0; right: 0; left: 0; position: absolute; background-color: red; color: white; padding: -10px -20px">
+        <center>YOU HAVE UNSAVED CHANGES</center>
+    </div>
+</body>
+
 </html>

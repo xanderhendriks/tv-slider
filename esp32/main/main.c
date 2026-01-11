@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include "app_mqtt.h"
 #include "console.h"
 #include "drv8452.h"
 #include "esp_attr.h"
@@ -14,7 +15,6 @@
 #include "esp_rom_sys.h"
 #include "hall_sensors.h"
 #include "led.h"
-#include "app_mqtt.h"
 #include "provisioning.h"
 #include "shaft_encoder.h"
 #include "system.h"
