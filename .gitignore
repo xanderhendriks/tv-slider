@@ -4,5 +4,6 @@ docs/build
 esp32/build
 esp32/sdkconfig.old
 esp32/sdkconfig
+esp32/main/assets
 esp32/managed_components
-
+esp32/node_modules

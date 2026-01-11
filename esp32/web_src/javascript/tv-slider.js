@@ -163,3 +163,14 @@ function upgrade_firmware_success(data) {
     }, 2000);
 }
 
+if (typeof window !== "undefined") {
+    window.open_tab = open_tab;
+    window.rest_call = rest_call;
+    window.update_status_start = update_status_start;
+    window.exec_if_not_idling = exec_if_not_idling;
+    window.update_status_handler = update_status_handler;
+    window.load_info = load_info;
+    window.upload_firmware = upload_firmware;
+    window.upload_firmware_progress = upload_firmware_progress;
+    window.upgrade_firmware_success = upgrade_firmware_success;
+}

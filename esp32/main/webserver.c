@@ -28,20 +28,6 @@ extern const uint8_t assets_index_html_start[] asm("_binary_index_html_start");
 extern const uint8_t assets_index_html_end[] asm("_binary_index_html_end");
 extern const uint8_t assets_favicon_ico_start[] asm("_binary_favicon_ico_start");
 extern const uint8_t assets_favicon_ico_end[] asm("_binary_favicon_ico_end");
-extern const uint8_t assets_images_hidden_tv_png_start[] asm("_binary_hidden_tv_png_start");
-extern const uint8_t assets_images_hidden_tv_png_end[] asm("_binary_hidden_tv_png_end");
-extern const uint8_t assets_images_sliding_tv_png_start[] asm("_binary_sliding_tv_png_start");
-extern const uint8_t assets_images_sliding_tv_png_end[] asm("_binary_sliding_tv_png_end");
-extern const uint8_t assets_images_nxs_logo_png_start[] asm("_binary_nxs_logo_png_start");
-extern const uint8_t assets_images_nxs_logo_png_end[] asm("_binary_nxs_logo_png_end");
-extern const uint8_t assets_images_unknown_tv_png_start[] asm("_binary_unknown_tv_png_start");
-extern const uint8_t assets_images_unknown_tv_png_end[] asm("_binary_unknown_tv_png_end");
-extern const uint8_t assets_stylesheets_tv_slider_css_start[] asm("_binary_tv_slider_css_start");
-extern const uint8_t assets_stylesheets_tv_slider_css_end[] asm("_binary_tv_slider_css_end");
-extern const uint8_t assets_javascript_tv_slider_js_start[] asm("_binary_tv_slider_js_start");
-extern const uint8_t assets_javascript_tv_slider_js_end[] asm("_binary_tv_slider_js_end");
-extern const uint8_t assets_javascript_jquery_1_12_4_min_js_start[] asm("_binary_jquery_1_12_4_min_js_start");
-extern const uint8_t assets_javascript_jquery_1_12_4_min_js_end[] asm("_binary_jquery_1_12_4_min_js_end");
 
 typedef struct
 {
@@ -50,17 +36,8 @@ typedef struct
     const uint8_t *end;
 } embedded_asset_t;
 
-static const embedded_asset_t s_assets[] = {
-    {"/index.html", assets_index_html_start, assets_index_html_end},
-    {"/favicon.ico", assets_favicon_ico_start, assets_favicon_ico_end},
-    {"/images/hidden_tv.png", assets_images_hidden_tv_png_start, assets_images_hidden_tv_png_end},
-    {"/images/sliding_tv.png", assets_images_sliding_tv_png_start, assets_images_sliding_tv_png_end},
-    {"/images/nxs_logo.png", assets_images_nxs_logo_png_start, assets_images_nxs_logo_png_end},
-    {"/images/unknown_tv.png", assets_images_unknown_tv_png_start, assets_images_unknown_tv_png_end},
-    {"/stylesheets/tv-slider.css", assets_stylesheets_tv_slider_css_start, assets_stylesheets_tv_slider_css_end},
-    {"/javascript/tv-slider.js", assets_javascript_tv_slider_js_start, assets_javascript_tv_slider_js_end},
-    {"/javascript/jquery-1.12.4.min.js", assets_javascript_jquery_1_12_4_min_js_start,
-     assets_javascript_jquery_1_12_4_min_js_end}};
+static const embedded_asset_t s_assets[] = {{"/index.html", assets_index_html_start, assets_index_html_end},
+                                            {"/favicon.ico", assets_favicon_ico_start, assets_favicon_ico_end}};
 
 static const char *content_type_for_path(const char *path)
 {
@@ -130,6 +107,11 @@ static esp_err_t static_get_handler(httpd_req_t *req)
 {
     const char *uri = req->uri;
     if (!uri || uri[0] == '\0' || strcmp(uri, "/") == 0)
+    {
+        return send_asset(req, &s_assets[0], "text/html");
+    }
+
+    if (strcmp(uri, "/index.html") == 0)
     {
         return send_asset(req, &s_assets[0], "text/html");
     }

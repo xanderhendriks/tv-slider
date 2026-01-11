@@ -1,0 +1,11 @@
+{
+  "name": "tv-slider-web",
+  "private": true,
+  "devDependencies": {
+    "esbuild": "^0.23.0"
+  },
+  "scripts": {
+    "web:build": "node web/build.js",
+    "web:watch": "node web/build.js --watch"
+  }
+}
