@@ -1,18 +1,26 @@
 #include "webserver.h"
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
 
+#include "esp_app_desc.h"
+#include "esp_chip_info.h"
 #include "esp_err.h"
+#include "esp_flash.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "esp_mac.h"
+#include "esp_netif.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "lwip/inet.h"
 
 static const char *TAG = "webserver";
 
@@ -154,6 +162,61 @@ static esp_err_t status_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t info_get_handler(httpd_req_t *req)
+{
+    const esp_app_desc_t *app_desc = esp_app_get_description();
+    esp_netif_t          *netif    = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+
+    const char *hostname = "";
+    if (netif)
+    {
+        esp_netif_get_hostname(netif, &hostname);
+    }
+
+    esp_netif_ip_info_t ip_info = {0};
+    if (netif)
+    {
+        esp_netif_get_ip_info(netif, &ip_info);
+    }
+    char ip_str[16];
+    snprintf(ip_str, sizeof(ip_str), IPSTR, IP2STR(&ip_info.ip));
+
+    uint8_t mac[6];
+    ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
+    char mac_str[20];
+    snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+
+    char mcu_str[160];
+    snprintf(mcu_str, sizeof(mcu_str), "%s (%d %s)", CONFIG_IDF_TARGET, chip_info.cores,
+             chip_info.cores == 1 ? "core" : "cores");
+
+    uint32_t flash_size = 0;
+    esp_flash_get_size(NULL, &flash_size);
+    char flash_str[32];
+    snprintf(flash_str, sizeof(flash_str), "%" PRIu32 "MB %s flash", flash_size / (uint32_t) (1024 * 1024),
+             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
+
+    uint32_t min_heap = esp_get_minimum_free_heap_size();
+    char     heap_str[32];
+    snprintf(heap_str, sizeof(heap_str), "%" PRIu32 " bytes", min_heap);
+
+    char resp[512];
+    snprintf(resp, sizeof(resp),
+             "{\"hostname\":\"%s\",\"ip_address\":\"%s\",\"mac_address\":\"%s\","
+             "\"app_version\":\"%s\",\"compile_time\":\"%s %s\",\"idf_version\":\"%s\","
+             "\"mcu\":\"%s\",\"flash\":\"%s\",\"min_heap\":\"%s\"}",
+             hostname ? hostname : "", ip_str, mac_str, app_desc ? app_desc->version : "",
+             app_desc ? app_desc->date : "", app_desc ? app_desc->time : "", app_desc ? app_desc->idf_ver : "", mcu_str,
+             flash_str, heap_str);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 static esp_err_t ota_post_handler(httpd_req_t *req)
 {
     if (req->content_len <= 0)
@@ -242,6 +305,12 @@ void webserver_start(void)
         .handler  = status_get_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t info_uri = {
+        .uri      = "/info/get",
+        .method   = HTTP_GET,
+        .handler  = info_get_handler,
+        .user_ctx = NULL,
+    };
     httpd_uri_t ota_uri = {
         .uri      = "/update",
         .method   = HTTP_POST,
@@ -256,6 +325,7 @@ void webserver_start(void)
     };
 
     httpd_register_uri_handler(server, &status_uri);
+    httpd_register_uri_handler(server, &info_uri);
     httpd_register_uri_handler(server, &ota_uri);
     httpd_register_uri_handler(server, &static_uri);
 }

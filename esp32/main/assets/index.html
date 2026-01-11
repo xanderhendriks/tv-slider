@@ -7,13 +7,8 @@
     <script src="javascript/jquery-1.12.4.min.js"></script>
     <script src="javascript/tv-slider.js"></script>
     <script>
-        function load_configuration() {
-            // In case reload is executed and there are unsaved changes in the system.
-            document.getElementById("you_have_unsaved_changes_panel").style.display = "none";
-        }
-
-        $(document).ready(function () {
-            load_configuration();
+        window.addEventListener("load", function () {
+            load_info();
         });
     </script>
 </head>
@@ -61,38 +56,58 @@
                 <div id="Info" class="tabcontent">
                     <table width="600" height="300" align="center">
                         <tr height="10">
+                            <td>Hostname</td>
                             <td>
-                                Part Number
-                            </td>
-                            <td>
-                                <div id="mfn_part_number" length="7"></div>
+                                <div id="info_hostname"></div>
                             </td>
                         </tr>
                         <tr height="10">
+                            <td>IP address</td>
                             <td>
-                                Part Revision
-                            </td>
-                            <td>
-                                <div id="mfn_part_revision" length="3"></div>
+                                <div id="info_ip"></div>
                             </td>
                         </tr>
                         <tr height="10">
+                            <td>MAC address</td>
                             <td>
-                                Serial Number
-                            </td>
-                            <td>
-                                <div id="mfn_serial_number" length="10"></div>
+                                <div id="info_mac"></div>
                             </td>
                         </tr>
                         <tr height="10">
+                            <td>App version</td>
                             <td>
-                                Software Version
-                            </td>
-                            <td>
-                                <div id="firmware_ps_version"></div>
+                                <div id="info_app_version"></div>
                             </td>
                         </tr>
-                        <tr>
+                        <tr height="10">
+                            <td>Firmware date</td>
+                            <td>
+                                <div id="info_compile_time"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>ESP-IDF version</td>
+                            <td>
+                                <div id="info_idf_version"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>MCU</td>
+                            <td>
+                                <div id="info_mcu"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>Flash size</td>
+                            <td>
+                                <div id="info_flash"></div>
+                            </td>
+                        </tr>
+                        <tr height="10">
+                            <td>Minimum free heap</td>
+                            <td>
+                                <div id="info_heap"></div>
+                            </td>
                         </tr>
                     </table>
                 </div>

@@ -8,15 +8,20 @@ table.formatted {
     border-collapse: collapse;
 }
 
-table.formatted td, th {
+table.formatted td,
+th {
     border: 1px solid #ddd;
     padding: 4px;
     text-align: left;
 }
 
-table.formatted tr:nth-child(even){background-color: #f2f2f2;}
+table.formatted tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
 
-table.formatted tr:hover {background-color: #ddd;}
+table.formatted tr:hover {
+    background-color: #ddd;
+}
 
 table.formatted th {
     padding-top: 6px;
@@ -26,13 +31,14 @@ table.formatted th {
     color: white;
 }
 
-.ui-draggable, .ui-droppable {
-	background-position: top;
+.ui-draggable,
+.ui-droppable {
+    background-position: top;
 }
 
 div.sh_id {
-    display: inline; 
-    font-size: 10px; 
+    display: inline;
+    font-size: 10px;
     padding-left: 10px;
     color: #999999;
 }
@@ -47,7 +53,9 @@ ul.tab {
 }
 
 /* Float the list items side by side */
-ul.tab li {float: left;}
+ul.tab li {
+    float: left;
+}
 
 /* Style the links inside the list items */
 ul.tab li a {
@@ -66,7 +74,8 @@ ul.tab li a:hover {
 }
 
 /* Create an active/current tablink class */
-ul.tab li a:focus, .active {
+ul.tab li a:focus,
+.active {
     background-color: #f47742;
 }
 
