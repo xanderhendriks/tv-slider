@@ -1,3 +1,42 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+table.formatted {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    border-collapse: collapse;
+}
+
+table.formatted td, th {
+    border: 1px solid #ddd;
+    padding: 4px;
+    text-align: left;
+}
+
+table.formatted tr:nth-child(even){background-color: #f2f2f2;}
+
+table.formatted tr:hover {background-color: #ddd;}
+
+table.formatted th {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    text-align: left;
+    background-color: #2980B9;
+    color: white;
+}
+
+.ui-draggable, .ui-droppable {
+	background-position: top;
+}
+
+div.sh_id {
+    display: inline; 
+    font-size: 10px; 
+    padding-left: 10px;
+    color: #999999;
+}
+
 ul.tab {
     list-style-type: none;
     margin: 0;

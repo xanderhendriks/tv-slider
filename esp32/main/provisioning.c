@@ -3,13 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "app_mqtt.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
-#include "app_mqtt.h"
 #include "webserver.h"
 #include "wifi_provisioning/manager.h"
 #include "wifi_provisioning/scheme_ble.h"
@@ -91,7 +91,13 @@ void ble_provisioning_start(void)
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_sta();
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+
+    uint8_t mac[6];
+    ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
+    char hostname[32];
+    snprintf(hostname, sizeof(hostname), "tv-slider-%02X%02X%02X", mac[3], mac[4], mac[5]);
+    ESP_ERROR_CHECK(esp_netif_set_hostname(sta_netif, hostname));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -102,7 +108,7 @@ void ble_provisioning_start(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, provisioning_event_handler, NULL));
 
     wifi_prov_mgr_config_t prov_cfg = {
-        .scheme              = wifi_prov_scheme_ble,
+        .scheme               = wifi_prov_scheme_ble,
         .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BLE,
     };
     ESP_ERROR_CHECK(wifi_prov_mgr_init(prov_cfg));
@@ -118,8 +124,6 @@ void ble_provisioning_start(void)
         return;
     }
 
-    uint8_t mac[6];
-    ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
     char service_name[16];
     snprintf(service_name, sizeof(service_name), "ESP32C6-%02X%02X%02X", mac[3], mac[4], mac[5]);
 

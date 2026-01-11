@@ -72,6 +72,7 @@ void app_main(void)
     ble_provisioning_start();
 
     ESP_ERROR_CHECK(led_init(&led_handle));
+    // led_set_pixel(led_handle, 128, 0, 128);
     ESP_LOGI(TAG, "LED initialized");
 
     ESP_ERROR_CHECK(drv8452_init(&drv_cfg, &drv8452_handle));

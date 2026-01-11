@@ -1,5 +1,10 @@
 #include "webserver.h"
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+
 #include "esp_err.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
@@ -9,17 +14,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <strings.h>
-
 static const char *TAG = "webserver";
 
 extern const uint8_t assets_index_html_start[] asm("_binary_index_html_start");
 extern const uint8_t assets_index_html_end[] asm("_binary_index_html_end");
-extern const uint8_t assets_ota_html_start[] asm("_binary_ota_html_start");
-extern const uint8_t assets_ota_html_end[] asm("_binary_ota_html_end");
 extern const uint8_t assets_favicon_ico_start[] asm("_binary_favicon_ico_start");
 extern const uint8_t assets_favicon_ico_end[] asm("_binary_favicon_ico_end");
 extern const uint8_t assets_images_hidden_tv_png_start[] asm("_binary_hidden_tv_png_start");
@@ -30,18 +28,12 @@ extern const uint8_t assets_images_nxs_logo_png_start[] asm("_binary_nxs_logo_pn
 extern const uint8_t assets_images_nxs_logo_png_end[] asm("_binary_nxs_logo_png_end");
 extern const uint8_t assets_images_unknown_tv_png_start[] asm("_binary_unknown_tv_png_start");
 extern const uint8_t assets_images_unknown_tv_png_end[] asm("_binary_unknown_tv_png_end");
-extern const uint8_t assets_stylesheets_tabs_css_start[] asm("_binary_tabs_css_start");
-extern const uint8_t assets_stylesheets_tabs_css_end[] asm("_binary_tabs_css_end");
-extern const uint8_t assets_stylesheets_nxs_css_start[] asm("_binary_nxs_css_start");
-extern const uint8_t assets_stylesheets_nxs_css_end[] asm("_binary_nxs_css_end");
-extern const uint8_t assets_javascript_unsaved_changes_js_start[] asm("_binary_unsaved_changes_js_start");
-extern const uint8_t assets_javascript_unsaved_changes_js_end[] asm("_binary_unsaved_changes_js_end");
-extern const uint8_t assets_javascript_tabs_js_start[] asm("_binary_tabs_js_start");
-extern const uint8_t assets_javascript_tabs_js_end[] asm("_binary_tabs_js_end");
+extern const uint8_t assets_stylesheets_tv_slider_css_start[] asm("_binary_tv_slider_css_start");
+extern const uint8_t assets_stylesheets_tv_slider_css_end[] asm("_binary_tv_slider_css_end");
+extern const uint8_t assets_javascript_tv_slider_js_start[] asm("_binary_tv_slider_js_start");
+extern const uint8_t assets_javascript_tv_slider_js_end[] asm("_binary_tv_slider_js_end");
 extern const uint8_t assets_javascript_jquery_1_12_4_min_js_start[] asm("_binary_jquery_1_12_4_min_js_start");
 extern const uint8_t assets_javascript_jquery_1_12_4_min_js_end[] asm("_binary_jquery_1_12_4_min_js_end");
-extern const uint8_t assets_javascript_configuration_js_start[] asm("_binary_configuration_js_start");
-extern const uint8_t assets_javascript_configuration_js_end[] asm("_binary_configuration_js_end");
 
 typedef struct
 {
@@ -52,19 +44,15 @@ typedef struct
 
 static const embedded_asset_t s_assets[] = {
     {"/index.html", assets_index_html_start, assets_index_html_end},
-    {"/ota.html", assets_ota_html_start, assets_ota_html_end},
     {"/favicon.ico", assets_favicon_ico_start, assets_favicon_ico_end},
     {"/images/hidden_tv.png", assets_images_hidden_tv_png_start, assets_images_hidden_tv_png_end},
     {"/images/sliding_tv.png", assets_images_sliding_tv_png_start, assets_images_sliding_tv_png_end},
     {"/images/nxs_logo.png", assets_images_nxs_logo_png_start, assets_images_nxs_logo_png_end},
     {"/images/unknown_tv.png", assets_images_unknown_tv_png_start, assets_images_unknown_tv_png_end},
-    {"/stylesheets/tabs.css", assets_stylesheets_tabs_css_start, assets_stylesheets_tabs_css_end},
-    {"/stylesheets/nxs.css", assets_stylesheets_nxs_css_start, assets_stylesheets_nxs_css_end},
-    {"/javascript/unsaved_changes.js", assets_javascript_unsaved_changes_js_start, assets_javascript_unsaved_changes_js_end},
-    {"/javascript/tabs.js", assets_javascript_tabs_js_start, assets_javascript_tabs_js_end},
-    {"/javascript/jquery-1.12.4.min.js", assets_javascript_jquery_1_12_4_min_js_start, assets_javascript_jquery_1_12_4_min_js_end},
-    {"/javascript/configuration.js", assets_javascript_configuration_js_start, assets_javascript_configuration_js_end},
-};
+    {"/stylesheets/tv-slider.css", assets_stylesheets_tv_slider_css_start, assets_stylesheets_tv_slider_css_end},
+    {"/javascript/tv-slider.js", assets_javascript_tv_slider_js_start, assets_javascript_tv_slider_js_end},
+    {"/javascript/jquery-1.12.4.min.js", assets_javascript_jquery_1_12_4_min_js_start,
+     assets_javascript_jquery_1_12_4_min_js_end}};
 
 static const char *content_type_for_path(const char *path)
 {
@@ -138,7 +126,7 @@ static esp_err_t static_get_handler(httpd_req_t *req)
         return send_asset(req, &s_assets[0], "text/html");
     }
 
-    char uri_path[256];
+    char   uri_path[256];
     size_t uri_len = strcspn(uri, "?");
     if (uri_len >= sizeof(uri_path))
     {
@@ -160,7 +148,7 @@ static esp_err_t static_get_handler(httpd_req_t *req)
 
 static esp_err_t status_get_handler(httpd_req_t *req)
 {
-    const char *resp = "{\"status\":\"ok\"}";
+    const char *resp = "{\"running\":false, \"error\":\"0\"}";
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
@@ -249,7 +237,7 @@ void webserver_start(void)
     }
 
     httpd_uri_t status_uri = {
-        .uri      = "/status",
+        .uri      = "/status/get",
         .method   = HTTP_GET,
         .handler  = status_get_handler,
         .user_ctx = NULL,

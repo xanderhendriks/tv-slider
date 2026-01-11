@@ -2,73 +2,20 @@
 <html>
 
 <head>
-    <link href="stylesheets/nxs.css" rel="stylesheet" type="text/css">
-    <link href="stylesheets/tabs.css" rel="stylesheet" type="text/css">
+    <link href="stylesheets/tv-slider.css" rel="stylesheet" type="text/css">
     <title>TV Slider</title>
     <script src="javascript/jquery-1.12.4.min.js"></script>
-    <script src="javascript/configuration.js"></script>
-    <script src="javascript/tabs.js"></script>
+    <script src="javascript/tv-slider.js"></script>
     <script>
         function load_configuration() {
-            configuration_url = '/Configuration/Get?pt_selection&pc_ip_address&pc_port&gps_udp_port&gps_udp_ip_address&ot_startup_mode&rx_return_mode'
-            configuration_url += '&sh_serial_number1&sh_serial_number2&sh_serial_number3&sh_serial_number4&sh_enable1&sh_enable2&sh_enable3&sh_enable4'
-            configuration_url += '&net_address_mode&net_ip_address&net_subnet_mask&net_gateway&net_dns_server'
-            configuration_url += '&mfn_part_number&mfn_serial_number&mfn_part_revision&firmware_ps_version&sh_motor_speed1&sh_motor_speed2&sh_motor_speed3&sh_motor_speed4'
-            // unset flag to indicate configuration retrieval is pending
-            conf_complete = false;
-            load_to_select('pt_selection_selector', playtable_pattern, get_configuration)
-            // incase reload is executed and there are unsaved changes in the system.
+            // In case reload is executed and there are unsaved changes in the system.
             document.getElementById("you_have_unsaved_changes_panel").style.display = "none";
         }
 
-        function option_formatter(field, value) {
-            if (field == "pt_selection_selector") {
-                let matches = playtable_pattern.exec(value);
-                return matches[1];
-            }
-            else {
-                return value;
-            }
-        }
-
         $(document).ready(function () {
-            update_status_start();
             load_configuration();
-
-            // UI bindings for sensorheads
-            for (var sensorhead_id = 1; sensorhead_id <= 4; sensorhead_id++) {
-                let id = sensorhead_id;
-
-                // auto hide panel
-                $("#sh_serial_number" + id + ", #sh_enable" + id).on("change", function () {
-                    let displayed = ($("#sh_serial_number" + id).html().trim() != '0') || ($("#sh_enable" + id + "_checkbox").prop("checked") == true);
-                    $("#sh" + id + "_panel").toggle(displayed);
-                });
-
-                $("#sh_enable" + id + "_checkbox").on("click", function () {
-                    if ($(this).prop("checked") == true) {
-                        $("#sh_enable" + id).val("enabled");
-                    }
-                    else {
-                        $("#sh_enable" + id).val("disabled");
-                    }
-                });
-            }
-
-            // UI bindings for playtables
-            $("#pt_selection_selector").on("change", function () {
-                pt_touched = true;
-                $("#pt_selection").val($(this).val());
-            });
-
-            $('#firmware_ps_version').on("change", function () {
-                if ($(this).text().match(/.*(\dch)? [a-z]+/)) {
-                    document.body.className += ' ' + 'dark';
-                }
-            });
         });
     </script>
-    <script src="javascript/unsaved_changes.js"></script>
 </head>
 
 <body>
@@ -94,9 +41,9 @@
             <td colspan="2">
 
                 <ul class="tab">
-                    <li><a href="#" class="tablinks active" onclick="openTab(event, 'Control')">Control</a></li>
-                    <li><a href="#" class="tablinks" onclick="openTab(event, 'Info')">Info</a></li>
-                    <li><a href="#" class="tablinks" onclick="openTab(event, 'Update')">Update</a></li>
+                    <li><a href="#" class="tablinks active" onclick="open_tab(event, 'Control')">Control</a></li>
+                    <li><a href="#" class="tablinks" onclick="open_tab(event, 'Info')">Info</a></li>
+                    <li><a href="#" class="tablinks" onclick="open_tab(event, 'OTA')">OTA</a></li>
                 </ul>
 
                 <div id="Control" class="tabcontent" style="display:block">
@@ -150,7 +97,7 @@
                     </table>
                 </div>
 
-                <div id="Update" class="tabcontent">
+                <div id="OTA" class="tabcontent">
                     <table width="600" height="300" align="center">
                         <tr height="10">
                             <td style="margin-right: 10px">
@@ -167,7 +114,7 @@
                                             onsubmit="upload_firmware(upload_firmware_progress, upgrade_firmware_success); return false"
                                             autocomplete="off">
                                             <input type="file" id="firmware_upgrade_input" accept=".bin">
-                                            <input type="submit" value="Flash" />
+                                            <input type="submit" value="Flash OTA" />
                                         </form>
                                     </div>
                                 </div>
