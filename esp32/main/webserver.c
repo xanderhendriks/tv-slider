@@ -5,41 +5,66 @@
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
-#include "esp_spiffs.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <strings.h>
 
 static const char *TAG = "webserver";
-static bool        s_spiffs_mounted;
 
-static esp_err_t ensure_spiffs_mounted(void)
+extern const uint8_t assets_index_html_start[] asm("_binary_index_html_start");
+extern const uint8_t assets_index_html_end[] asm("_binary_index_html_end");
+extern const uint8_t assets_ota_html_start[] asm("_binary_ota_html_start");
+extern const uint8_t assets_ota_html_end[] asm("_binary_ota_html_end");
+extern const uint8_t assets_favicon_ico_start[] asm("_binary_favicon_ico_start");
+extern const uint8_t assets_favicon_ico_end[] asm("_binary_favicon_ico_end");
+extern const uint8_t assets_images_hidden_tv_png_start[] asm("_binary_hidden_tv_png_start");
+extern const uint8_t assets_images_hidden_tv_png_end[] asm("_binary_hidden_tv_png_end");
+extern const uint8_t assets_images_sliding_tv_png_start[] asm("_binary_sliding_tv_png_start");
+extern const uint8_t assets_images_sliding_tv_png_end[] asm("_binary_sliding_tv_png_end");
+extern const uint8_t assets_images_nxs_logo_png_start[] asm("_binary_nxs_logo_png_start");
+extern const uint8_t assets_images_nxs_logo_png_end[] asm("_binary_nxs_logo_png_end");
+extern const uint8_t assets_images_unknown_tv_png_start[] asm("_binary_unknown_tv_png_start");
+extern const uint8_t assets_images_unknown_tv_png_end[] asm("_binary_unknown_tv_png_end");
+extern const uint8_t assets_stylesheets_tabs_css_start[] asm("_binary_tabs_css_start");
+extern const uint8_t assets_stylesheets_tabs_css_end[] asm("_binary_tabs_css_end");
+extern const uint8_t assets_stylesheets_nxs_css_start[] asm("_binary_nxs_css_start");
+extern const uint8_t assets_stylesheets_nxs_css_end[] asm("_binary_nxs_css_end");
+extern const uint8_t assets_javascript_unsaved_changes_js_start[] asm("_binary_unsaved_changes_js_start");
+extern const uint8_t assets_javascript_unsaved_changes_js_end[] asm("_binary_unsaved_changes_js_end");
+extern const uint8_t assets_javascript_tabs_js_start[] asm("_binary_tabs_js_start");
+extern const uint8_t assets_javascript_tabs_js_end[] asm("_binary_tabs_js_end");
+extern const uint8_t assets_javascript_jquery_1_12_4_min_js_start[] asm("_binary_jquery_1_12_4_min_js_start");
+extern const uint8_t assets_javascript_jquery_1_12_4_min_js_end[] asm("_binary_jquery_1_12_4_min_js_end");
+extern const uint8_t assets_javascript_configuration_js_start[] asm("_binary_configuration_js_start");
+extern const uint8_t assets_javascript_configuration_js_end[] asm("_binary_configuration_js_end");
+
+typedef struct
 {
-    if (s_spiffs_mounted)
-    {
-        return ESP_OK;
-    }
+    const char    *uri;
+    const uint8_t *start;
+    const uint8_t *end;
+} embedded_asset_t;
 
-    esp_vfs_spiffs_conf_t conf = {
-        .base_path              = "/spiffs",
-        .partition_label        = "spiffs",
-        .max_files              = 4,
-        .format_if_mount_failed = false,
-    };
-
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Failed to mount SPIFFS (%s)", esp_err_to_name(ret));
-        return ret;
-    }
-
-    s_spiffs_mounted = true;
-    return ESP_OK;
-}
+static const embedded_asset_t s_assets[] = {
+    {"/index.html", assets_index_html_start, assets_index_html_end},
+    {"/ota.html", assets_ota_html_start, assets_ota_html_end},
+    {"/favicon.ico", assets_favicon_ico_start, assets_favicon_ico_end},
+    {"/images/hidden_tv.png", assets_images_hidden_tv_png_start, assets_images_hidden_tv_png_end},
+    {"/images/sliding_tv.png", assets_images_sliding_tv_png_start, assets_images_sliding_tv_png_end},
+    {"/images/nxs_logo.png", assets_images_nxs_logo_png_start, assets_images_nxs_logo_png_end},
+    {"/images/unknown_tv.png", assets_images_unknown_tv_png_start, assets_images_unknown_tv_png_end},
+    {"/stylesheets/tabs.css", assets_stylesheets_tabs_css_start, assets_stylesheets_tabs_css_end},
+    {"/stylesheets/nxs.css", assets_stylesheets_nxs_css_start, assets_stylesheets_nxs_css_end},
+    {"/javascript/unsaved_changes.js", assets_javascript_unsaved_changes_js_start, assets_javascript_unsaved_changes_js_end},
+    {"/javascript/tabs.js", assets_javascript_tabs_js_start, assets_javascript_tabs_js_end},
+    {"/javascript/jquery-1.12.4.min.js", assets_javascript_jquery_1_12_4_min_js_start, assets_javascript_jquery_1_12_4_min_js_end},
+    {"/javascript/configuration.js", assets_javascript_configuration_js_start, assets_javascript_configuration_js_end},
+};
 
 static const char *content_type_for_path(const char *path)
 {
@@ -85,36 +110,23 @@ static const char *content_type_for_path(const char *path)
     return "application/octet-stream";
 }
 
-static esp_err_t send_file(httpd_req_t *req, const char *path, const char *content_type)
+static const embedded_asset_t *find_asset(const char *uri_path)
 {
-    if (ensure_spiffs_mounted() != ESP_OK)
+    for (size_t i = 0; i < (sizeof(s_assets) / sizeof(s_assets[0])); ++i)
     {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "SPIFFS mount failed");
-        return ESP_FAIL;
-    }
-
-    FILE *file = fopen(path, "r");
-    if (!file)
-    {
-        ESP_LOGW(TAG, "Failed to open %s (%d)", path, errno);
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
-        return ESP_FAIL;
-    }
-
-    httpd_resp_set_type(req, content_type);
-    char buf[512];
-    size_t read_bytes = 0;
-    while ((read_bytes = fread(buf, 1, sizeof(buf), file)) > 0)
-    {
-        if (httpd_resp_send_chunk(req, buf, read_bytes) != ESP_OK)
+        if (strcmp(uri_path, s_assets[i].uri) == 0)
         {
-            fclose(file);
-            httpd_resp_sendstr_chunk(req, NULL);
-            return ESP_FAIL;
+            return &s_assets[i];
         }
     }
-    fclose(file);
-    httpd_resp_sendstr_chunk(req, NULL);
+    return NULL;
+}
+
+static esp_err_t send_asset(httpd_req_t *req, const embedded_asset_t *asset, const char *content_type)
+{
+    size_t len = asset->end - asset->start;
+    httpd_resp_set_type(req, content_type);
+    httpd_resp_send(req, (const char *) asset->start, len);
     return ESP_OK;
 }
 
@@ -123,7 +135,7 @@ static esp_err_t static_get_handler(httpd_req_t *req)
     const char *uri = req->uri;
     if (!uri || uri[0] == '\0' || strcmp(uri, "/") == 0)
     {
-        return send_file(req, "/spiffs/index.html", "text/html");
+        return send_asset(req, &s_assets[0], "text/html");
     }
 
     char uri_path[256];
@@ -136,14 +148,14 @@ static esp_err_t static_get_handler(httpd_req_t *req)
     memcpy(uri_path, uri, uri_len);
     uri_path[uri_len] = '\0';
 
-    char path[256];
-    if (snprintf(path, sizeof(path), "/spiffs%s", uri_path) >= (int) sizeof(path))
+    const embedded_asset_t *asset = find_asset(uri_path);
+    if (!asset)
     {
-        httpd_resp_send_err(req, HTTPD_414_URI_TOO_LONG, "URI too long");
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
         return ESP_FAIL;
     }
 
-    return send_file(req, path, content_type_for_path(path));
+    return send_asset(req, asset, content_type_for_path(uri_path));
 }
 
 static esp_err_t status_get_handler(httpd_req_t *req)
@@ -228,11 +240,6 @@ void webserver_start(void)
     httpd_handle_t server = NULL;
 
     config.uri_match_fn = httpd_uri_match_wildcard;
-
-    if (ensure_spiffs_mounted() != ESP_OK)
-    {
-        return;
-    }
 
     ESP_LOGI(TAG, "Starting HTTP server on port %d", config.server_port);
     if (httpd_start(&server, &config) != ESP_OK)
