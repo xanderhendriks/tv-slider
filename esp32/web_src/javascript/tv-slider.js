@@ -27,6 +27,75 @@ function rest_call(uri, callback, complete_callback) {
     });
 }
 
+var tv_position_timer = null;
+
+function init_tv_view() {
+    var $view = $("#tv-view");
+    var $unknown = $("#tv-unknown");
+    var $hidden_layer = $("#tv-hidden-layer");
+    var $sliding_layer = $("#tv-sliding-layer");
+
+    function apply_size_from_image(img) {
+        if (!img || !img.naturalWidth || !img.naturalHeight) {
+            return;
+        }
+        $view.css({
+            width: img.naturalWidth + "px",
+            height: img.naturalHeight + "px"
+        });
+    }
+
+    $("#tv-hidden, #tv-sliding, #tv-unknown").on("load", function () {
+        apply_size_from_image(this);
+    });
+
+    apply_size_from_image($("#tv-hidden")[0] || $("#tv-sliding")[0] || $("#tv-unknown")[0]);
+    $unknown.show();
+    $hidden_layer.hide();
+    $sliding_layer.hide();
+}
+
+function render_tv_position(position) {
+    var $unknown = $("#tv-unknown");
+    var $hidden_layer = $("#tv-hidden-layer");
+    var $sliding_layer = $("#tv-sliding-layer");
+
+    if (position === undefined || position === null || position <= -1) {
+        $unknown.show();
+        $hidden_layer.hide();
+        $sliding_layer.hide();
+        return;
+    }
+
+    var clamped = Math.max(0, Math.min(100, position));
+    $unknown.hide();
+    $hidden_layer.show();
+    $sliding_layer.show();
+    $hidden_layer.css("width", (100 - clamped) + "%");
+    $sliding_layer.css("width", clamped + "%");
+}
+
+function update_position_handler() {
+    rest_call('/position/get', function (data) {
+        var position = parseInt(data && data.position, 10);
+        if (isNaN(position)) {
+            position = -1;
+        }
+        render_tv_position(position);
+    }, function () {
+        tv_position_timer = setTimeout(function () {
+            update_position_handler();
+        }, 150);
+    });
+}
+
+function start_position_updates() {
+    if (tv_position_timer) {
+        return;
+    }
+    update_position_handler();
+}
+
 function update_status_start() {
     update_status_handler();
 }
@@ -166,6 +235,8 @@ function upgrade_firmware_success(data) {
 if (typeof window !== "undefined") {
     window.open_tab = open_tab;
     window.rest_call = rest_call;
+    window.init_tv_view = init_tv_view;
+    window.start_position_updates = start_position_updates;
     window.update_status_start = update_status_start;
     window.exec_if_not_idling = exec_if_not_idling;
     window.update_status_handler = update_status_handler;

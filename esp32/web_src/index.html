@@ -9,6 +9,8 @@
     <script>
         window.addEventListener("load", function () {
             load_info();
+            init_tv_view();
+            start_position_updates();
         });
     </script>
 </head>
@@ -45,10 +47,14 @@
                     <table width="600" height="300" align="center">
                         <tr>
                             <td align="center">
-                                <div>
-                                    <img src="images/unknown_tv.png" alt="TV Status">
-                                    <img src="images/hidden_tv.png" alt="TV Status">
-                                    <img src="images/sliding_tv.png" alt="TV Status">
+                                <div id="tv-view" class="tv-view">
+                                    <img id="tv-unknown" src="images/unknown_tv.png" alt="TV Status Unknown">
+                                    <div id="tv-hidden-layer" class="tv-layer">
+                                        <img id="tv-hidden" src="images/hidden_tv.png" alt="TV Hidden">
+                                    </div>
+                                    <div id="tv-sliding-layer" class="tv-layer">
+                                        <img id="tv-sliding" src="images/sliding_tv.png" alt="TV Sliding">
+                                    </div>
                                 </div>
                             </td>
                         </tr>

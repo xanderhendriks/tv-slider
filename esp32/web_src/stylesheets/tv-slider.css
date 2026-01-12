@@ -2,6 +2,47 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.tv-view {
+    position: relative;
+    display: inline-block;
+}
+
+.tv-view img {
+    display: block;
+}
+
+#tv-unknown {
+    display: none;
+}
+
+.tv-layer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.tv-layer img {
+    position: absolute;
+    top: 0;
+}
+
+#tv-hidden-layer {
+    right: 0;
+}
+
+#tv-hidden-layer img {
+    right: 0;
+}
+
+#tv-sliding-layer {
+    left: 0;
+}
+
+#tv-sliding-layer img {
+    left: 0;
+}
+
 table.formatted {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 80%;

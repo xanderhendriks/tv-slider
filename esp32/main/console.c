@@ -17,6 +17,7 @@
 #include "hall_sensors.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
+#include "position.h"
 #include "sdkconfig.h"
 #include "shaft_encoder.h"
 
@@ -68,6 +69,8 @@ static esp_err_t register_encoder_count_command(void);
 static esp_err_t register_hall_state_command(void);
 static esp_err_t register_led_command(void);
 static esp_err_t register_led_clear_command(void);
+static esp_err_t register_position_set_command(void);
+static esp_err_t register_position_get_command(void);
 
 static int cmd_enable(int argc, char **argv);
 static int cmd_frequency(int argc, char **argv);
@@ -79,6 +82,8 @@ static int cmd_encoder_count(int argc, char **argv);
 static int cmd_hall_state(int argc, char **argv);
 static int cmd_led(int argc, char **argv);
 static int cmd_led_clear(int argc, char **argv);
+static int cmd_position_set(int argc, char **argv);
+static int cmd_position_get(int argc, char **argv);
 static void tcp_console_start(void);
 static void tcp_console_task(void *arg);
 static void tcp_console_install_stdout(void);
@@ -187,6 +192,20 @@ esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t enco
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to register led_clear command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    err = register_position_set_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register position_set command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    err = register_position_get_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register position_get command (%s)", esp_err_to_name(err));
         return err;
     }
 
@@ -465,6 +484,32 @@ static esp_err_t register_led_clear_command(void)
         .help     = "Clear the LED strip",
         .hint     = NULL,
         .func     = &cmd_led_clear,
+        .argtable = NULL,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_position_set_command(void)
+{
+    const esp_console_cmd_t cmd = {
+        .command  = "position_set",
+        .help     = "Set the reported position for UI testing",
+        .hint     = NULL,
+        .func     = &cmd_position_set,
+        .argtable = NULL,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_position_get_command(void)
+{
+    const esp_console_cmd_t cmd = {
+        .command  = "position_get",
+        .help     = "Read the reported position value",
+        .hint     = NULL,
+        .func     = &cmd_position_get,
         .argtable = NULL,
     };
 
@@ -829,6 +874,44 @@ static int cmd_led_clear(int argc, char **argv)
     }
 
     printf("LED cleared\n");
+    return 0;
+}
+
+static int cmd_position_set(int argc, char **argv)
+{
+    if (argc != 2)
+    {
+        printf("Usage: position_set <-1..100>\n");
+        return 1;
+    }
+
+    const char *input = argv[1];
+    char       *endptr = NULL;
+    long        position = strtol(input, &endptr, 10);
+    if (endptr == input || *endptr != '\0')
+    {
+        printf("Position must be -1 or 0-100\n");
+        return 1;
+    }
+
+    if (position < -1 || position > 100)
+    {
+        printf("Position must be -1 or 0-100\n");
+        return 1;
+    }
+
+    position_set((int32_t) position);
+    printf("Position set to %ld\n", position);
+    return 0;
+}
+
+static int cmd_position_get(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+
+    int32_t position = position_get();
+    printf("Position: %ld\n", (long) position);
     return 0;
 }
 

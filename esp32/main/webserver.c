@@ -22,6 +22,8 @@
 #include "freertos/task.h"
 #include "lwip/inet.h"
 
+#include "position.h"
+
 static const char *TAG = "webserver";
 
 extern const uint8_t assets_index_html_start[] asm("_binary_index_html_start");
@@ -139,6 +141,16 @@ static esp_err_t static_get_handler(httpd_req_t *req)
 static esp_err_t status_get_handler(httpd_req_t *req)
 {
     const char *resp = "{\"running\":false, \"error\":\"0\"}";
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t position_get_handler(httpd_req_t *req)
+{
+    int32_t position = position_get();
+    char    resp[64];
+    snprintf(resp, sizeof(resp), "{\"position\":%" PRId32 "}", position);
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
@@ -293,6 +305,12 @@ void webserver_start(void)
         .handler  = info_get_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t position_uri = {
+        .uri      = "/position/get",
+        .method   = HTTP_GET,
+        .handler  = position_get_handler,
+        .user_ctx = NULL,
+    };
     httpd_uri_t ota_uri = {
         .uri      = "/update",
         .method   = HTTP_POST,
@@ -308,6 +326,7 @@ void webserver_start(void)
 
     httpd_register_uri_handler(server, &status_uri);
     httpd_register_uri_handler(server, &info_uri);
+    httpd_register_uri_handler(server, &position_uri);
     httpd_register_uri_handler(server, &ota_uri);
     httpd_register_uri_handler(server, &static_uri);
 }
