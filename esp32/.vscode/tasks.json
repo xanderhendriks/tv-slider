@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "start_openocd",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "board/esp32c6-builtin.cfg"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^.*$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^.*Open On-Chip Debugger.*",
+                    "endsPattern": "^.*Listening on port 3333 for gdb connections.*"
+                }
+            }
+        }
+    ]
+}

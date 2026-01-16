@@ -2,14 +2,42 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "gdbtarget",
-      "request": "attach",
-      "name": "Eclipse CDT GDB Adapter"
-    },
-    {
-      "type": "espidf",
-      "name": "Launch",
-      "request": "launch"
+      "name": "ESP32 OpenOCD",
+      "preLaunchTask": "start_openocd",
+      "type": "cppdbg",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/build",
+      "program": "${workspaceFolder}/build/tv_slider.elf",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/opt/esp/tools/riscv32-esp-elf-gdb/16.2_20250324/riscv32-esp-elf-gdb/bin/riscv32-esp-elf-gdb",
+      "miDebuggerServerAddress": "127.0.0.1:3333",
+      "launchCompleteCommand": "exec-continue",
+      "stopAtConnect": false,
+      "setupCommands": [
+        {
+          "text": "set remote hardware-watchpoint-limit 2"
+        },
+        {
+          "text": "set mem inaccessible-by-default off"
+        },
+        {
+          "text": "set architecture riscv:rv32"
+        },
+        {
+          "text": "set remotetimeout 20"
+        }
+      ],
+      "postRemoteConnectCommands": [
+        {
+          "text": "monitor reset halt"
+        },
+        {
+          "text": "flushregs"
+        },
+        {
+          "text": "break app_main"
+        }
+      ]
     }
   ]
 }

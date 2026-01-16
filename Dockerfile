@@ -20,6 +20,18 @@ EOF
 
 USER ubuntu
 
+RUN <<EOF
+    # Add statesmith
+    cd /home/ubuntu
+    wget https://github.com/StateSmith/StateSmith/releases/download/cli-v0.19.0/statesmith-linux-x64.tar.gz
+    tar -xvzf statesmith-linux-x64.tar.gz
+    rm statesmith-linux-x64.tar.gz
+
+    chmod +x ss.cli
+
+    sudo mv ss.cli /usr/local/bin
+EOF
+
 RUN echo "source /opt/esp/entrypoint.sh\nset +e" > ~/.bashrc
 
 ENTRYPOINT ["/bin/bash", "-c"]
