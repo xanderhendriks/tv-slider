@@ -17,6 +17,7 @@
 #include "led.h"
 #include "provisioning.h"
 #include "shaft_encoder.h"
+#include "slider.h"
 #include "system.h"
 
 static const char *TAG = "main";
@@ -112,6 +113,8 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting console...");
     ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle, hall_handle, led_handle));
 
+    slider_init(hall_handle, drv8452_handle);
+
     while (true)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -133,15 +136,19 @@ static void IRAM_ATTR hall_sensor_handler(hall_sensor_t sensor, void *user_ctx)
     {
         case HALL_SENSOR_IN_STOP:
             name = "IN_STOP";
+            slider_post_event(slider_state_machine_EventId_SENSOR_IN_STOP);
             break;
         case HALL_SENSOR_IN_SLOW:
             name = "IN_SLOW";
+            slider_post_event(slider_state_machine_EventId_SENSOR_IN_SLOW);
             break;
         case HALL_SENSOR_OUT_SLOW:
             name = "OUT_SLOW";
+            slider_post_event(slider_state_machine_EventId_SENSOR_OUT_SLOW);
             break;
         case HALL_SENSOR_OUT_STOP:
             name = "OUT_STOP";
+            slider_post_event(slider_state_machine_EventId_SENSOR_OUT_STOP);
             break;
         default:
             break;
@@ -154,4 +161,5 @@ static void mqtt_switch_handler(bool on, void *user_ctx)
 {
     (void) user_ctx;
     ESP_LOGI(TAG, "MQTT switch update: %s", on ? "on" : "off");
+    slider_post_event(on ? slider_state_machine_EventId_CMD_MOVE_OUT : slider_state_machine_EventId_CMD_MOVE_IN);
 }
