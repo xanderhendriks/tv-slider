@@ -87,7 +87,7 @@ IN_RAMP_DOWN_STATE: TIMER_EXPIRED [speed > SLIDER_MIN_SPEED] / { \n    speed -= 
 
 ' ===== ERROR_STATE STATE =====
 ERROR_STATE: enter / { \n    slider_fault_handler(); \n}
-ERROR_STATE --> STOPPED_STATE
+ERROR_STATE --> STOPPED_STATE: CMD_CLEAR_FAULT
 
 ' //////////////////////// StateSmith config ////////////////////////
 /'!  $CONFIG : toml

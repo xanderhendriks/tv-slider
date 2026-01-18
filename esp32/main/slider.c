@@ -9,6 +9,9 @@
 #include "hall_sensors.h"
 #include "slider_state_machine.h"
 
+#define SPEED_MIN_HZ 40000
+#define SPEED_MAX_HZ 150000
+
 static const char           *TAG = "slider";
 static slider_state_machine  slider_sm;
 static QueueHandle_t         slider_event_queue;
@@ -37,36 +40,26 @@ void slider_init(hall_sensors_handle_t hall_sensors, drv8452_handle_t drv8452)
 void slider_motor_enable(bool enable)
 {
     ESP_LOGI(TAG, "Slider motor %s", enable ? "enabled" : "disabled");
-    // Implementation to enable or disable the slider motor
-    if (enable)
-    {
-        // Code to enable the motor
-    }
-    else
-    {
-        // Code to disable the motor
-    }
+
+    // drv8452_sleep(slider_drv8452, !enable);
+    ESP_ERROR_CHECK(drv8452_register_write(slider_drv8452, DRV8452_REG_CTRL1,
+                                           enable ? DRV8452_CTRL1_EN_OUT_ENABLED : DRV8452_CTRL1_EN_OUT_DISABLED));
 }
 
 void slider_speed_set(uint16_t speed)
 {
-    ESP_LOGI(TAG, "Slider speed set to %u", speed);
-    // Implementation to set the speed of the slider motor
-    // Code to adjust motor speed based on the provided value
+    uint32_t speed_hz = SPEED_MIN_HZ + ((SPEED_MAX_HZ - SPEED_MIN_HZ) * speed) / 100;
+
+    ESP_LOGI(TAG, "Slider speed set to %u", speed_hz);
+
+    drv8452_step_frequency(slider_drv8452, speed_hz);
 }
 
 void slider_direction_set(slider_direction_t direction)
 {
     ESP_LOGI(TAG, "Slider direction set to %s", direction == SLIDER_DIRECTION_IN ? "IN" : "OUT");
-    // Implementation to set the direction of the slider motor
-    if (direction == SLIDER_DIRECTION_IN)
-    {
-        // Code to set motor direction to IN
-    }
-    else
-    {
-        // Code to set motor direction to OUT
-    }
+
+    drv8452_direction(slider_drv8452, direction == SLIDER_DIRECTION_IN);
 }
 
 void slider_start_timer(uint32_t interval_ms)
@@ -145,7 +138,7 @@ static void event_task(void *arg)
     {
         if (xQueueReceive(slider_event_queue, &event, portMAX_DELAY) == pdTRUE)
         {
-            ESP_LOGI(TAG, "Processing slider event %d", event);
+            ESP_LOGI(TAG, "Processing slider event %s", slider_state_machine_event_id_to_string(event));
             slider_state_machine_dispatch_event(&slider_sm, event);
         }
     }

@@ -323,7 +323,7 @@ STOPPED_STATE --> IN_RAMP_UP_STATE : CMD_MOVE_IN [!slider_is_at_in_stop()]
 
 STOPPED_STATE --> ERROR_STATE : MOTOR_FAULT
 
-ERROR_STATE --> STOPPED_STATE : do
+ERROR_STATE --> STOPPED_STATE : CMD_CLEAR_FAULT
 
 MOVING_OUT_STATE --> STOPPED_STATE : CMD_STOP
 
@@ -400,7 +400,7 @@ class slider_state_machine
 evaluateGuard = null;
     static EventId = 
     {
-        DO : 0, // The `do` event is special. State event handlers do not consume this event (ancestors all get it too) unless a transition occurs.
+        CMD_CLEAR_FAULT : 0,
         CMD_MOVE_IN : 1,
         CMD_MOVE_OUT : 2,
         CMD_STOP : 3,
@@ -484,7 +484,7 @@ evaluateGuard = null;
             case slider_state_machine.StateId.ERROR_STATE:
                 switch (eventId)
                 {
-                    case slider_state_machine.EventId.DO: this.#ERROR_STATE_do(); break;
+                    case slider_state_machine.EventId.CMD_CLEAR_FAULT: this.#ERROR_STATE_cmd_clear_fault(); break;
                 }
                 break;
             
@@ -668,10 +668,10 @@ evaluateGuard = null;
         this.stateId = slider_state_machine.StateId.ROOT;
     }
     
-    #ERROR_STATE_do()
+    #ERROR_STATE_cmd_clear_fault()
     {
         // ERROR_STATE behavior
-        // uml: do / { this.tracer?.edgeTransition("edge3"); } TransitionTo(STOPPED_STATE)
+        // uml: CMD_CLEAR_FAULT / { this.tracer?.edgeTransition("edge3"); } TransitionTo(STOPPED_STATE)
         {
             // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
             this.#ERROR_STATE_exit();
@@ -1387,10 +1387,10 @@ evaluateGuard = null;
     {
         switch (id)
         {
+            case slider_state_machine.EventId.CMD_CLEAR_FAULT: return "CMD_CLEAR_FAULT";
             case slider_state_machine.EventId.CMD_MOVE_IN: return "CMD_MOVE_IN";
             case slider_state_machine.EventId.CMD_MOVE_OUT: return "CMD_MOVE_OUT";
             case slider_state_machine.EventId.CMD_STOP: return "CMD_STOP";
-            case slider_state_machine.EventId.DO: return "DO";
             case slider_state_machine.EventId.MOTOR_FAULT: return "MOTOR_FAULT";
             case slider_state_machine.EventId.SENSOR_IN_SLOW: return "SENSOR_IN_SLOW";
             case slider_state_machine.EventId.SENSOR_IN_STOP: return "SENSOR_IN_STOP";
@@ -1435,7 +1435,7 @@ evaluateGuard = null;
             center: true
         });
 
-        const diagramEventNamesArray = ['do', 'CMD_MOVE_IN', 'CMD_MOVE_OUT', 'CMD_STOP', 'MOTOR_FAULT', 'SENSOR_IN_SLOW', 'SENSOR_IN_STOP', 'SENSOR_OUT_SLOW', 'SENSOR_OUT_STOP', 'TIMER_EXPIRED', ];
+        const diagramEventNamesArray = ['CMD_CLEAR_FAULT', 'CMD_MOVE_IN', 'CMD_MOVE_OUT', 'CMD_STOP', 'MOTOR_FAULT', 'SENSOR_IN_SLOW', 'SENSOR_IN_STOP', 'SENSOR_OUT_SLOW', 'SENSOR_OUT_STOP', 'TIMER_EXPIRED', ];
 
         // Mapping from state to available events
         const stateEventsMapping = {
@@ -1445,7 +1445,7 @@ evaluateGuard = null;
     "MOTOR_FAULT"
   ],
   "ERROR_STATE": [
-    "do"
+    "CMD_CLEAR_FAULT"
   ],
   "MOVING_OUT_STATE": [
     "CMD_STOP",

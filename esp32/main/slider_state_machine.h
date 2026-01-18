@@ -14,7 +14,7 @@
 
 typedef enum slider_state_machine_EventId
 {
-    slider_state_machine_EventId_DO = 0, // The `do` event is special. State event handlers do not consume this event (ancestors all get it too) unless a transition occurs.
+    slider_state_machine_EventId_CMD_CLEAR_FAULT = 0,
     slider_state_machine_EventId_CMD_MOVE_IN = 1,
     slider_state_machine_EventId_CMD_MOVE_OUT = 2,
     slider_state_machine_EventId_CMD_STOP = 3,

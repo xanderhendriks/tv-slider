@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "argtable3/argtable3.h"
 #include "driver/uart.h"
@@ -20,6 +20,8 @@
 #include "position.h"
 #include "sdkconfig.h"
 #include "shaft_encoder.h"
+#include "slider.h"
+#include "slider_state_machine.h"
 
 static const char            *TAG = "console";
 static drv8452_handle_t       s_drv_handle;
@@ -54,10 +56,24 @@ typedef struct led_args
     struct arg_end *end;
 } led_args_t;
 
-static frequency_args_t s_frequency_args;
-static enable_args_t    s_enable_args;
-static direction_args_t s_direction_args;
-static led_args_t       s_led_args;
+typedef struct slider_event_args
+{
+    struct arg_str *event;
+    struct arg_end *end;
+} slider_event_args_t;
+
+typedef struct sleep_args
+{
+    struct arg_int *state;
+    struct arg_end *end;
+} sleep_args_t;
+
+static frequency_args_t    s_frequency_args;
+static enable_args_t       s_enable_args;
+static direction_args_t    s_direction_args;
+static led_args_t          s_led_args;
+static slider_event_args_t s_slider_event_args;
+static sleep_args_t        s_sleep_args;
 
 static esp_err_t register_enable_command(void);
 static esp_err_t register_frequency_command(void);
@@ -71,29 +87,33 @@ static esp_err_t register_led_command(void);
 static esp_err_t register_led_clear_command(void);
 static esp_err_t register_position_set_command(void);
 static esp_err_t register_position_get_command(void);
+static esp_err_t register_slider_event_command(void);
+static esp_err_t register_sleep_command(void);
 
-static int cmd_enable(int argc, char **argv);
-static int cmd_frequency(int argc, char **argv);
-static int cmd_direction(int argc, char **argv);
-static int cmd_register_read(int argc, char **argv);
-static int cmd_register_write(int argc, char **argv);
-static int cmd_fault_clear(int argc, char **argv);
-static int cmd_encoder_count(int argc, char **argv);
-static int cmd_hall_state(int argc, char **argv);
-static int cmd_led(int argc, char **argv);
-static int cmd_led_clear(int argc, char **argv);
-static int cmd_position_set(int argc, char **argv);
-static int cmd_position_get(int argc, char **argv);
-static void tcp_console_start(void);
-static void tcp_console_task(void *arg);
-static void tcp_console_install_stdout(void);
-static int tcp_console_open(const char *path, int flags, int mode);
-static int tcp_console_close(int fd);
+static int     cmd_enable(int argc, char **argv);
+static int     cmd_frequency(int argc, char **argv);
+static int     cmd_direction(int argc, char **argv);
+static int     cmd_register_read(int argc, char **argv);
+static int     cmd_register_write(int argc, char **argv);
+static int     cmd_fault_clear(int argc, char **argv);
+static int     cmd_encoder_count(int argc, char **argv);
+static int     cmd_hall_state(int argc, char **argv);
+static int     cmd_led(int argc, char **argv);
+static int     cmd_led_clear(int argc, char **argv);
+static int     cmd_position_set(int argc, char **argv);
+static int     cmd_position_get(int argc, char **argv);
+static int     cmd_slider_event(int argc, char **argv);
+static int     cmd_sleep(int argc, char **argv);
+static void    tcp_console_start(void);
+static void    tcp_console_task(void *arg);
+static void    tcp_console_install_stdout(void);
+static int     tcp_console_open(const char *path, int flags, int mode);
+static int     tcp_console_close(int fd);
 static ssize_t tcp_console_write(int fd, const void *data, size_t size);
-static int tcp_console_fstat(int fd, struct stat *st);
+static int     tcp_console_fstat(int fd, struct stat *st);
 
-static int                   s_tcp_client_fd = -1;
-static SemaphoreHandle_t     s_tcp_client_lock;
+static int               s_tcp_client_fd = -1;
+static SemaphoreHandle_t s_tcp_client_lock;
 
 esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t encoder_handle,
                         hall_sensors_handle_t hall_handle, led_handle_t led_handle)
@@ -209,6 +229,20 @@ esp_err_t console_start(drv8452_handle_t drv_handle, shaft_encoder_handle_t enco
         return err;
     }
 
+    err = register_slider_event_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register slider_event command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    err = register_sleep_command();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to register sleep command (%s)", esp_err_to_name(err));
+        return err;
+    }
+
     err = esp_console_start_repl(s_repl);
     if (err != ESP_OK)
     {
@@ -305,7 +339,7 @@ static void tcp_console_task(void *arg)
 {
     (void) arg;
 
-    const int port = 23;
+    const int port        = 23;
     int       listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (listen_sock < 0)
     {
@@ -344,8 +378,8 @@ static void tcp_console_task(void *arg)
     while (true)
     {
         struct sockaddr_in6 source_addr;
-        socklen_t addr_len = sizeof(source_addr);
-        int  sock     = accept(listen_sock, (struct sockaddr *) &source_addr, &addr_len);
+        socklen_t           addr_len = sizeof(source_addr);
+        int                 sock     = accept(listen_sock, (struct sockaddr *) &source_addr, &addr_len);
         if (sock < 0)
         {
             ESP_LOGW(TAG, "TCP accept failed");
@@ -386,8 +420,8 @@ static void tcp_console_task(void *arg)
                 line[len] = '\0';
                 if (len > 0)
                 {
-                    int cmd_ret = 0;
-                    esp_err_t err = esp_console_run(line, &cmd_ret);
+                    int       cmd_ret = 0;
+                    esp_err_t err     = esp_console_run(line, &cmd_ret);
                     if (err == ESP_OK && cmd_ret == ESP_OK)
                     {
                         send(sock, "OK\r\n", 4, 0);
@@ -441,6 +475,22 @@ static esp_err_t register_enable_command(void)
         .hint     = NULL,
         .func     = &cmd_enable,
         .argtable = &s_enable_args,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_sleep_command(void)
+{
+    s_sleep_args.state = arg_int1(NULL, NULL, "<0|1>", "0 disables, 1 enables sleep mode");
+    s_sleep_args.end   = arg_end(2);
+
+    const esp_console_cmd_t cmd = {
+        .command  = "sleep",
+        .help     = "Enable or disable DRV8452 sleep mode",
+        .hint     = NULL,
+        .func     = &cmd_sleep,
+        .argtable = &s_sleep_args,
     };
 
     return esp_console_cmd_register(&cmd);
@@ -511,6 +561,24 @@ static esp_err_t register_position_get_command(void)
         .hint     = NULL,
         .func     = &cmd_position_get,
         .argtable = NULL,
+    };
+
+    return esp_console_cmd_register(&cmd);
+}
+
+static esp_err_t register_slider_event_command(void)
+{
+    s_slider_event_args.event = arg_str1(NULL, NULL, "<event>",
+                                         "Event name: cmd_move_in|cmd_move_out|cmd_stop|cmd_clear_fault|motor_fault|"
+                                         "sensor_in_slow|sensor_in_stop|sensor_out_slow|sensor_out_stop|timer_expired");
+    s_slider_event_args.end   = arg_end(2);
+
+    const esp_console_cmd_t cmd = {
+        .command  = "slider_event",
+        .help     = "Post event to slider state machine",
+        .hint     = NULL,
+        .func     = &cmd_slider_event,
+        .argtable = &s_slider_event_args,
     };
 
     return esp_console_cmd_register(&cmd);
@@ -631,6 +699,39 @@ static int cmd_enable(int argc, char **argv)
         printf("Driver outputs disabled\n");
     }
 
+    return 0;
+}
+
+static int cmd_sleep(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &s_sleep_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, s_sleep_args.end, argv[0]);
+        return 1;
+    }
+
+    int state = s_sleep_args.state->ival[0];
+    if (state != 0 && state != 1)
+    {
+        printf("State must be 0 (disable) or 1 (enable)\n");
+        return 1;
+    }
+
+    if (s_drv_handle == NULL)
+    {
+        ESP_LOGE(TAG, "DRV8452 handle is not ready");
+        return 1;
+    }
+
+    esp_err_t err = drv8452_sleep(s_drv_handle, state == 1);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to set sleep mode (%s)", esp_err_to_name(err));
+        return 1;
+    }
+
+    printf("Sleep mode %s\n", state ? "enabled" : "disabled");
     return 0;
 }
 
@@ -885,8 +986,8 @@ static int cmd_position_set(int argc, char **argv)
         return 1;
     }
 
-    const char *input = argv[1];
-    char       *endptr = NULL;
+    const char *input    = argv[1];
+    char       *endptr   = NULL;
     long        position = strtol(input, &endptr, 10);
     if (endptr == input || *endptr != '\0')
     {
@@ -961,4 +1062,74 @@ static int cmd_hall_state(int argc, char **argv)
            (state >> HALL_SENSOR_IN_STOP) & 1u, (state >> HALL_SENSOR_IN_SLOW) & 1u,
            (state >> HALL_SENSOR_OUT_SLOW) & 1u, (state >> HALL_SENSOR_OUT_STOP) & 1u);
     return 0;
+}
+
+static int cmd_slider_event(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &s_slider_event_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, s_slider_event_args.end, argv[0]);
+        return 1;
+    }
+
+    const char                  *event_str = s_slider_event_args.event->sval[0];
+    slider_state_machine_EventId event;
+
+    if (strcmp(event_str, "cmd_move_in") == 0)
+    {
+        event = slider_state_machine_EventId_CMD_MOVE_IN;
+    }
+    else if (strcmp(event_str, "cmd_move_out") == 0)
+    {
+        event = slider_state_machine_EventId_CMD_MOVE_OUT;
+    }
+    else if (strcmp(event_str, "cmd_stop") == 0)
+    {
+        event = slider_state_machine_EventId_CMD_STOP;
+    }
+    else if (strcmp(event_str, "cmd_clear_fault") == 0)
+    {
+        event = slider_state_machine_EventId_CMD_CLEAR_FAULT;
+    }
+    else if (strcmp(event_str, "motor_fault") == 0)
+    {
+        event = slider_state_machine_EventId_MOTOR_FAULT;
+    }
+    else if (strcmp(event_str, "sensor_in_slow") == 0)
+    {
+        event = slider_state_machine_EventId_SENSOR_IN_SLOW;
+    }
+    else if (strcmp(event_str, "sensor_in_stop") == 0)
+    {
+        event = slider_state_machine_EventId_SENSOR_IN_STOP;
+    }
+    else if (strcmp(event_str, "sensor_out_slow") == 0)
+    {
+        event = slider_state_machine_EventId_SENSOR_OUT_SLOW;
+    }
+    else if (strcmp(event_str, "sensor_out_stop") == 0)
+    {
+        event = slider_state_machine_EventId_SENSOR_OUT_STOP;
+    }
+    else if (strcmp(event_str, "timer_expired") == 0)
+    {
+        event = slider_state_machine_EventId_TIMER_EXPIRED;
+    }
+    else
+    {
+        printf("Unknown event: %s\n", event_str);
+        return 1;
+    }
+
+    if (slider_post_event(event))
+    {
+        printf("Event '%s' posted successfully\n", event_str);
+        return 0;
+    }
+    else
+    {
+        printf("Failed to post event '%s'\n", event_str);
+        return 1;
+    }
 }

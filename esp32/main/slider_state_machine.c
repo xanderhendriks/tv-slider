@@ -22,7 +22,7 @@ static void ERROR_STATE_enter(slider_state_machine* sm);
 
 static void ERROR_STATE_exit(slider_state_machine* sm);
 
-static void ERROR_STATE_do(slider_state_machine* sm);
+static void ERROR_STATE_cmd_clear_fault(slider_state_machine* sm);
 
 static void MOVING_IN_STATE_enter(slider_state_machine* sm);
 
@@ -146,7 +146,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
         case slider_state_machine_StateId_ERROR_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_DO: ERROR_STATE_do(sm); break;
+                case slider_state_machine_EventId_CMD_CLEAR_FAULT: ERROR_STATE_cmd_clear_fault(sm); break;
                 
                 default: break; // to avoid "unused enumeration value in switch" warning
             }
@@ -336,10 +336,10 @@ static void ERROR_STATE_exit(slider_state_machine* sm)
     sm->state_id = slider_state_machine_StateId_ROOT;
 }
 
-static void ERROR_STATE_do(slider_state_machine* sm)
+static void ERROR_STATE_cmd_clear_fault(slider_state_machine* sm)
 {
     // ERROR_STATE behavior
-    // uml: do TransitionTo(STOPPED_STATE)
+    // uml: CMD_CLEAR_FAULT TransitionTo(STOPPED_STATE)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         ERROR_STATE_exit(sm);
@@ -930,10 +930,10 @@ char const * slider_state_machine_event_id_to_string(slider_state_machine_EventI
 {
     switch (id)
     {
+        case slider_state_machine_EventId_CMD_CLEAR_FAULT: return "CMD_CLEAR_FAULT";
         case slider_state_machine_EventId_CMD_MOVE_IN: return "CMD_MOVE_IN";
         case slider_state_machine_EventId_CMD_MOVE_OUT: return "CMD_MOVE_OUT";
         case slider_state_machine_EventId_CMD_STOP: return "CMD_STOP";
-        case slider_state_machine_EventId_DO: return "DO";
         case slider_state_machine_EventId_MOTOR_FAULT: return "MOTOR_FAULT";
         case slider_state_machine_EventId_SENSOR_IN_SLOW: return "SENSOR_IN_SLOW";
         case slider_state_machine_EventId_SENSOR_IN_STOP: return "SENSOR_IN_STOP";
