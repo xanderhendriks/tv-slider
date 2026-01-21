@@ -28,6 +28,15 @@
 
 static const char *TAG = "webserver";
 
+static config_apply_cb s_config_apply_cb  = NULL;
+static void           *s_config_apply_ctx = NULL;
+
+void webserver_set_config_apply_callback(config_apply_cb cb, void *user_ctx)
+{
+    s_config_apply_cb  = cb;
+    s_config_apply_ctx = user_ctx;
+}
+
 extern const uint8_t assets_index_html_start[] asm("_binary_index_html_start");
 extern const uint8_t assets_index_html_end[] asm("_binary_index_html_end");
 extern const uint8_t assets_favicon_ico_start[] asm("_binary_favicon_ico_start");
@@ -376,6 +385,11 @@ static esp_err_t config_set_handler(httpd_req_t *req)
         ESP_LOGE(TAG, "Failed to save config (%s)", esp_err_to_name(err));
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to save config");
         return ESP_FAIL;
+    }
+
+    if (s_config_apply_cb)
+    {
+        s_config_apply_cb(&config, s_config_apply_ctx);
     }
 
     httpd_resp_set_type(req, "application/json");

@@ -18,6 +18,7 @@ static esp_mqtt_client_handle_t s_client;
 static mqtt_switch_cb_t         s_switch_cb;
 static void                    *s_switch_ctx;
 static bool                     s_started;
+static config_data_t            s_cfg_cached;
 
 static bool parse_switch_payload(const char *payload)
 {
@@ -86,6 +87,53 @@ void mqtt_client_init(mqtt_switch_cb_t cb, void *user_ctx)
     s_switch_ctx = user_ctx;
 }
 
+static void mqtt_client_stop_if_running(void)
+{
+    if (s_client)
+    {
+        esp_mqtt_client_stop(s_client);
+        esp_mqtt_client_destroy(s_client);
+        s_client = NULL;
+    }
+    s_started = false;
+}
+
+static void mqtt_client_build_topics(const config_data_t *cfg)
+{
+    snprintf(s_topic_switch, sizeof(s_topic_switch), "%s/switch", cfg->mqtt_topic);
+    snprintf(s_topic_state, sizeof(s_topic_state), "%s/state", cfg->mqtt_topic);
+    snprintf(s_topic_position, sizeof(s_topic_position), "%s/position", cfg->mqtt_topic);
+}
+
+static void mqtt_client_start_with_cfg(const config_data_t *cfg)
+{
+    mqtt_client_stop_if_running();
+
+    s_cfg_cached = *cfg;
+    mqtt_client_build_topics(&s_cfg_cached);
+
+    char uri[96];
+    snprintf(uri, sizeof(uri), "mqtt://%s:%u", s_cfg_cached.mqtt_server, (unsigned) s_cfg_cached.mqtt_port);
+
+    esp_mqtt_client_config_t cfg_cli = {
+        .broker.address.uri = uri,
+    };
+
+    s_client = esp_mqtt_client_init(&cfg_cli);
+    if (!s_client)
+    {
+        ESP_LOGE(TAG, "Failed to init MQTT client");
+        return;
+    }
+
+    esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+
+    if (esp_mqtt_client_start(s_client) == ESP_OK)
+    {
+        s_started = true;
+    }
+}
+
 void mqtt_client_start(void)
 {
     if (s_started)
@@ -100,31 +148,16 @@ void mqtt_client_start(void)
         return;
     }
 
-    // Build topic strings based on configured base topic
-    snprintf(s_topic_switch, sizeof(s_topic_switch), "%s/switch", cfg_data.mqtt_topic);
-    snprintf(s_topic_state, sizeof(s_topic_state), "%s/state", cfg_data.mqtt_topic);
-    snprintf(s_topic_position, sizeof(s_topic_position), "%s/position", cfg_data.mqtt_topic);
+    mqtt_client_start_with_cfg(&cfg_data);
+}
 
-    char uri[96];
-    snprintf(uri, sizeof(uri), "mqtt://%s:%u", cfg_data.mqtt_server, (unsigned) cfg_data.mqtt_port);
-
-    esp_mqtt_client_config_t cfg = {
-        .broker.address.uri = uri,
-    };
-
-    s_client = esp_mqtt_client_init(&cfg);
-    if (!s_client)
+void mqtt_client_apply_config(const config_data_t *cfg)
+{
+    if (!cfg)
     {
-        ESP_LOGE(TAG, "Failed to init MQTT client");
         return;
     }
-
-    esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
-
-    if (esp_mqtt_client_start(s_client) == ESP_OK)
-    {
-        s_started = true;
-    }
+    mqtt_client_start_with_cfg(cfg);
 }
 
 void mqtt_publish_state(bool on)

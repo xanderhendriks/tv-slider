@@ -62,10 +62,12 @@
                         </tr>
                         <tr height="60" style="text-align: center; vertical-align: middle">
                             <td style="vertical-align: middle">
-                                <button onclick="slider_move_out()" style="width: 80px; height: 40px; font-size: 24px; vertical-align: middle">←</button>
-                                <button onclick="slider_stop()" style="width: 80px; height: 40px; font-size: 14px; margin: 0 10px; vertical-align: middle">STOP</button>
-                                <button onclick="slider_move_in()" style="width: 80px; height: 40px; font-size: 24px; vertical-align: middle">→</button>
-                            </td>
+                                <button onclick="slider_move_out()"
+                                    style="width: 80px; height: 40px; font-size: 20px; vertical-align: middle">&lt;&lt;</button>
+                                <button onclick="slider_stop()"
+                                    style="width: 80px; height: 40px; font-size: 14px; margin: 0 10px; vertical-align: middle">STOP</button>
+                                <button onclick="slider_move_in()"
+                                    style="width: 80px; height: 40px; font-size: 20px; vertical-align: middle">&gt;&gt;</button>
                         </tr>
                     </table>
                 </div>
@@ -160,8 +162,10 @@
                         </tr>
                         <tr height="20">
                             <td colspan="2" style="text-align: center">
-                                <button onclick="save_config_handler()">Save Configuration</button>
-                                <button onclick="load_config_handler()">Reload Configuration</button>
+                                <button onclick="save_config_handler()"
+                                    style="width: 80px; height: 40px; font-size: 16px; vertical-align: middle">Save</button>
+                                <button onclick="load_config_handler()"
+                                    style="width: 80px; height: 40px; font-size: 16px; margin-left: 10px; vertical-align: middle">Reload</button>
                             </td>
                         </tr>
                     </table>

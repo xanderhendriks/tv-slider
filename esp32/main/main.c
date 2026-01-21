@@ -21,12 +21,19 @@
 #include "shaft_encoder.h"
 #include "slider.h"
 #include "system.h"
+#include "webserver.h"
 
 static const char *TAG = "main";
+
+typedef struct
+{
+    hall_sensors_handle_t hall_handle;
+} apply_ctx_t;
 
 static void drv8452_fault_handler(drv8452_handle_t handle);
 static void hall_sensor_handler(hall_sensor_t sensor, void *user_ctx);
 static void mqtt_switch_handler(bool on, void *user_ctx);
+static void apply_config_cb(const config_data_t *cfg, void *user_ctx);
 
 void app_main(void)
 {
@@ -34,6 +41,7 @@ void app_main(void)
     shaft_encoder_handle_t encoder_handle = NULL;
     hall_sensors_handle_t  hall_handle    = NULL;
     led_handle_t           led_handle     = NULL;
+    apply_ctx_t            apply_ctx      = {0};
     uint8_t                value          = 0;
     drv8452_config_t       drv_cfg        = {
                      .step_pwm_timer     = LEDC_TIMER_0,
@@ -88,6 +96,9 @@ void app_main(void)
     // Initialize configuration module
     ESP_ERROR_CHECK(config_init());
 
+    // Register config apply callback before webserver may start
+    webserver_set_config_apply_callback(apply_config_cb, &apply_ctx);
+
     ble_provisioning_start();
 
     ESP_ERROR_CHECK(led_init(&led_handle));
@@ -102,14 +113,12 @@ void app_main(void)
 
     ESP_ERROR_CHECK(hall_sensors_init(&hall_cfg, &hall_handle));
     ESP_LOGI(TAG, "Hall sensors initialized");
-
-    // Apply hall sensor inversion setting from config
+    apply_ctx.hall_handle = hall_handle;
+    // Apply initial config (hall inversion and MQTT restart)
     config_data_t cfg;
-    ESP_ERROR_CHECK(config_get(&cfg));
-    ESP_ERROR_CHECK(hall_sensors_set_invert(hall_handle, cfg.invert_inputs));
-    if (cfg.invert_inputs)
+    if (config_get(&cfg) == ESP_OK)
     {
-        ESP_LOGI(TAG, "Hall sensor inputs inverted");
+        apply_config_cb(&cfg, &apply_ctx);
     }
 
     ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, false));
@@ -189,4 +198,26 @@ static void mqtt_switch_handler(bool on, void *user_ctx)
     (void) user_ctx;
     ESP_LOGI(TAG, "MQTT switch update: %s", on ? "on" : "off");
     slider_post_event(on ? slider_state_machine_EventId_CMD_MOVE_OUT : slider_state_machine_EventId_CMD_MOVE_IN);
+}
+
+static void apply_config_cb(const config_data_t *cfg, void *user_ctx)
+{
+    if (!cfg)
+    {
+        return;
+    }
+
+    // Apply hall sensor inversion
+    if (user_ctx)
+    {
+        apply_ctx_t *ctx = (apply_ctx_t *) user_ctx;
+        if (ctx->hall_handle)
+        {
+            hall_sensors_set_invert(ctx->hall_handle, cfg->invert_inputs);
+            ESP_LOGI(TAG, "Hall sensor invert_inputs=%d applied", cfg->invert_inputs);
+        }
+    }
+
+    // Reconfigure MQTT client
+    mqtt_client_apply_config(cfg);
 }

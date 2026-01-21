@@ -50,8 +50,8 @@ esp_err_t hall_sensors_init(const hall_sensors_config_t *config, hall_sensors_ha
         return ESP_ERR_NO_MEM;
     }
 
-    ctx->callback = config->callback;
-    ctx->user_ctx = config->user_ctx;
+    ctx->callback   = config->callback;
+    ctx->user_ctx   = config->user_ctx;
     ctx->active_low = config->active_low;
     for (int i = 0; i < 4; ++i)
     {
@@ -121,7 +121,7 @@ esp_err_t hall_sensors_set_invert(hall_sensors_handle_t handle, bool invert)
 
 esp_err_t hall_sensors_get_state(hall_sensors_handle_t handle, uint8_t *state_mask)
 {
-    hall_sensors_ctx_t *ctx = handle;
+    hall_sensors_ctx_t *ctx  = handle;
     uint8_t             mask = 0;
 
     if (!handle || !state_mask)
@@ -135,7 +135,7 @@ esp_err_t hall_sensors_get_state(hall_sensors_handle_t handle, uint8_t *state_ma
         {
             continue;
         }
-        int level = gpio_get_level(ctx->gpio_nums[i]);
+        int  level  = gpio_get_level(ctx->gpio_nums[i]);
         bool active = ctx->active_low ? (level == 0) : (level != 0);
         if (active)
         {
