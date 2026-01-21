@@ -108,6 +108,17 @@ esp_err_t hall_sensors_deinit(hall_sensors_handle_t handle)
     return ESP_OK;
 }
 
+esp_err_t hall_sensors_set_invert(hall_sensors_handle_t handle, bool invert)
+{
+    hall_sensors_ctx_t *ctx = handle;
+    if (!ctx)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ctx->active_low = invert;
+    return ESP_OK;
+}
+
 esp_err_t hall_sensors_get_state(hall_sensors_handle_t handle, uint8_t *state_mask)
 {
     hall_sensors_ctx_t *ctx = handle;

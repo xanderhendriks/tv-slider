@@ -4,17 +4,15 @@
 #include <string.h>
 #include <strings.h>
 
+#include "config.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
 
 static const char *TAG = "mqtt_client";
 
-#define MQTT_SERVER "192.168.0.253"
-#define MQTT_PORT   1883
-
-#define MQTT_TOPIC_SWITCH   "tv-slider/switch"
-#define MQTT_TOPIC_STATE    "tv-slider/state"
-#define MQTT_TOPIC_POSITION "tv-slider/position"
+static char s_topic_switch[CONFIG_MQTT_TOPIC_MAX_LEN + 16];
+static char s_topic_state[CONFIG_MQTT_TOPIC_MAX_LEN + 16];
+static char s_topic_position[CONFIG_MQTT_TOPIC_MAX_LEN + 16];
 
 static esp_mqtt_client_handle_t s_client;
 static mqtt_switch_cb_t         s_switch_cb;
@@ -63,15 +61,15 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     {
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "Connected");
-            esp_mqtt_client_subscribe(event->client, MQTT_TOPIC_SWITCH, 1);
+            esp_mqtt_client_subscribe(event->client, s_topic_switch, 1);
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGW(TAG, "Disconnected");
             break;
         case MQTT_EVENT_DATA:
         {
-            if (event->topic_len == (int) strlen(MQTT_TOPIC_SWITCH) &&
-                strncmp(event->topic, MQTT_TOPIC_SWITCH, event->topic_len) == 0)
+            if (event->topic_len == (int) strlen(s_topic_switch) &&
+                strncmp(event->topic, s_topic_switch, event->topic_len) == 0)
             {
                 handle_switch_message(event->data, event->data_len);
             }
@@ -95,8 +93,20 @@ void mqtt_client_start(void)
         return;
     }
 
-    char uri[64];
-    snprintf(uri, sizeof(uri), "mqtt://%s:%d", MQTT_SERVER, MQTT_PORT);
+    config_data_t cfg_data;
+    if (config_get(&cfg_data) != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to load MQTT config");
+        return;
+    }
+
+    // Build topic strings based on configured base topic
+    snprintf(s_topic_switch, sizeof(s_topic_switch), "%s/switch", cfg_data.mqtt_topic);
+    snprintf(s_topic_state, sizeof(s_topic_state), "%s/state", cfg_data.mqtt_topic);
+    snprintf(s_topic_position, sizeof(s_topic_position), "%s/position", cfg_data.mqtt_topic);
+
+    char uri[96];
+    snprintf(uri, sizeof(uri), "mqtt://%s:%u", cfg_data.mqtt_server, (unsigned) cfg_data.mqtt_port);
 
     esp_mqtt_client_config_t cfg = {
         .broker.address.uri = uri,
@@ -125,7 +135,7 @@ void mqtt_publish_state(bool on)
     }
 
     const char *payload = on ? "on" : "off";
-    esp_mqtt_client_publish(s_client, MQTT_TOPIC_STATE, payload, 0, 1, 1);
+    esp_mqtt_client_publish(s_client, s_topic_state, payload, 0, 1, 1);
 }
 
 void mqtt_publish_position(int32_t position)
@@ -137,5 +147,5 @@ void mqtt_publish_position(int32_t position)
 
     char payload[16];
     snprintf(payload, sizeof(payload), "%" PRId32, position);
-    esp_mqtt_client_publish(s_client, MQTT_TOPIC_POSITION, payload, 0, 1, 1);
+    esp_mqtt_client_publish(s_client, s_topic_position, payload, 0, 1, 1);
 }

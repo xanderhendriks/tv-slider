@@ -232,6 +232,73 @@ function upgrade_firmware_success(data) {
     }, 2000);
 }
 
+function load_config_handler() {
+    rest_call('/config/get', function (data) {
+        if (data) {
+            $("#config_mqtt_server").val(data.mqtt_server || "");
+            $("#config_mqtt_port").val(data.mqtt_port != null ? data.mqtt_port : "");
+            $("#config_mqtt_topic").val(data.mqtt_topic || "");
+            $("#config_invert_inputs").prop("checked", data.invert_inputs || false);
+            $("#config_status_message").text("Configuration loaded").css("color", "green");
+            setTimeout(function () {
+                $("#config_status_message").text("");
+            }, 3000);
+        }
+    });
+}
+
+function save_config_handler() {
+    var config_data = {
+        mqtt_server: $("#config_mqtt_server").val(),
+        mqtt_port: parseInt($("#config_mqtt_port").val(), 10) || 1883,
+        mqtt_topic: $("#config_mqtt_topic").val(),
+        invert_inputs: $("#config_invert_inputs").is(":checked")
+    };
+
+    $.ajax({
+        url: '/config/set',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(config_data),
+        success: function (response) {
+            $("#config_status_message").text("Configuration saved successfully").css("color", "green");
+            setTimeout(function () {
+                $("#config_status_message").text("");
+            }, 3000);
+        },
+        error: function (xhr, status, error) {
+            $("#config_status_message").text("Failed to save configuration").css("color", "red");
+        }
+    });
+}
+
+function slider_post_event(event_name) {
+    $.ajax({
+        url: '/slider/event',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ event: event_name }),
+        success: function (response) {
+            console.log("Event posted: " + event_name);
+        },
+        error: function (xhr, status, error) {
+            console.error("Failed to post event: " + event_name);
+        }
+    });
+}
+
+function slider_move_in() {
+    slider_post_event("cmd_move_in");
+}
+
+function slider_move_out() {
+    slider_post_event("cmd_move_out");
+}
+
+function slider_stop() {
+    slider_post_event("cmd_stop");
+}
+
 if (typeof window !== "undefined") {
     window.open_tab = open_tab;
     window.rest_call = rest_call;
@@ -244,4 +311,10 @@ if (typeof window !== "undefined") {
     window.upload_firmware = upload_firmware;
     window.upload_firmware_progress = upload_firmware_progress;
     window.upgrade_firmware_success = upgrade_firmware_success;
+    window.load_config_handler = load_config_handler;
+    window.save_config_handler = save_config_handler;
+    window.slider_post_event = slider_post_event;
+    window.slider_move_in = slider_move_in;
+    window.slider_move_out = slider_move_out;
+    window.slider_stop = slider_stop;
 }

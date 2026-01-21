@@ -37,6 +37,7 @@ typedef struct
 esp_err_t hall_sensors_init(const hall_sensors_config_t *config, hall_sensors_handle_t *out_handle);
 esp_err_t hall_sensors_deinit(hall_sensors_handle_t handle);
 esp_err_t hall_sensors_get_state(hall_sensors_handle_t handle, uint8_t *state_mask);
+esp_err_t hall_sensors_set_invert(hall_sensors_handle_t handle, bool invert);
 
 #ifdef __cplusplus
 }

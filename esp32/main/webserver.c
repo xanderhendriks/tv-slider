@@ -7,6 +7,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include "cJSON.h"
+#include "config.h"
 #include "esp_app_desc.h"
 #include "esp_chip_info.h"
 #include "esp_err.h"
@@ -21,8 +23,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/inet.h"
-
 #include "position.h"
+#include "slider.h"
 
 static const char *TAG = "webserver";
 
@@ -279,6 +281,186 @@ static esp_err_t ota_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t config_get_handler(httpd_req_t *req)
+{
+    config_data_t config;
+    esp_err_t     err = config_get(&config);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to get config (%s)", esp_err_to_name(err));
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to get config");
+        return ESP_FAIL;
+    }
+
+    char resp[512];
+    snprintf(resp, sizeof(resp), "{\"mqtt_server\":\"%s\",\"mqtt_port\":%u,\"mqtt_topic\":\"%s\",\"invert_inputs\":%s}",
+             config.mqtt_server, (unsigned) config.mqtt_port, config.mqtt_topic,
+             config.invert_inputs ? "true" : "false");
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t config_set_handler(httpd_req_t *req)
+{
+    if (req->content_len <= 0 || req->content_len > 1024)
+    {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid content length");
+        return ESP_FAIL;
+    }
+
+    char *buf = malloc(req->content_len + 1);
+    if (!buf)
+    {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+        return ESP_FAIL;
+    }
+
+    int received = httpd_req_recv(req, buf, req->content_len);
+    if (received <= 0)
+    {
+        free(buf);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Failed to receive data");
+        return ESP_FAIL;
+    }
+    buf[received] = '\0';
+
+    cJSON *json = cJSON_Parse(buf);
+    free(buf);
+
+    if (!json)
+    {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
+
+    config_data_t config;
+    config_get(&config);  // Load current config as base
+
+    cJSON *mqtt_server = cJSON_GetObjectItem(json, "mqtt_server");
+    if (mqtt_server && cJSON_IsString(mqtt_server))
+    {
+        strncpy(config.mqtt_server, mqtt_server->valuestring, CONFIG_MQTT_SERVER_MAX_LEN - 1);
+        config.mqtt_server[CONFIG_MQTT_SERVER_MAX_LEN - 1] = '\0';
+    }
+
+    cJSON *mqtt_topic = cJSON_GetObjectItem(json, "mqtt_topic");
+    if (mqtt_topic && cJSON_IsString(mqtt_topic))
+    {
+        strncpy(config.mqtt_topic, mqtt_topic->valuestring, CONFIG_MQTT_TOPIC_MAX_LEN - 1);
+        config.mqtt_topic[CONFIG_MQTT_TOPIC_MAX_LEN - 1] = '\0';
+    }
+
+    cJSON *mqtt_port = cJSON_GetObjectItem(json, "mqtt_port");
+    if (mqtt_port && cJSON_IsNumber(mqtt_port))
+    {
+        int port_val = mqtt_port->valueint;
+        if (port_val >= 1 && port_val <= 65535)
+        {
+            config.mqtt_port = (uint16_t) port_val;
+        }
+    }
+
+    cJSON *invert_inputs = cJSON_GetObjectItem(json, "invert_inputs");
+    if (invert_inputs && cJSON_IsBool(invert_inputs))
+    {
+        config.invert_inputs = cJSON_IsTrue(invert_inputs);
+    }
+
+    cJSON_Delete(json);
+
+    esp_err_t err = config_save(&config);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to save config (%s)", esp_err_to_name(err));
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to save config");
+        return ESP_FAIL;
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+    return ESP_OK;
+}
+
+static esp_err_t slider_event_handler(httpd_req_t *req)
+{
+    if (req->content_len <= 0 || req->content_len > 256)
+    {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid content length");
+        return ESP_FAIL;
+    }
+
+    char *buf = malloc(req->content_len + 1);
+    if (!buf)
+    {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+        return ESP_FAIL;
+    }
+
+    int received = httpd_req_recv(req, buf, req->content_len);
+    if (received <= 0)
+    {
+        free(buf);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Failed to receive data");
+        return ESP_FAIL;
+    }
+    buf[received] = '\0';
+
+    cJSON *json = cJSON_Parse(buf);
+    free(buf);
+
+    if (!json)
+    {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
+
+    cJSON *event = cJSON_GetObjectItem(json, "event");
+    if (!event || !cJSON_IsString(event))
+    {
+        cJSON_Delete(json);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing or invalid event field");
+        return ESP_FAIL;
+    }
+
+    slider_state_machine_EventId event_id  = 0;
+    const char                  *event_str = event->valuestring;
+
+    if (strcmp(event_str, "cmd_move_in") == 0)
+    {
+        event_id = slider_state_machine_EventId_CMD_MOVE_IN;
+    }
+    else if (strcmp(event_str, "cmd_move_out") == 0)
+    {
+        event_id = slider_state_machine_EventId_CMD_MOVE_OUT;
+    }
+    else if (strcmp(event_str, "cmd_stop") == 0)
+    {
+        event_id = slider_state_machine_EventId_CMD_STOP;
+    }
+    else
+    {
+        cJSON_Delete(json);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown event");
+        return ESP_FAIL;
+    }
+
+    cJSON_Delete(json);
+
+    if (slider_post_event(event_id))
+    {
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+        return ESP_OK;
+    }
+    else
+    {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post event");
+        return ESP_FAIL;
+    }
+}
+
 void webserver_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -317,6 +499,24 @@ void webserver_start(void)
         .handler  = ota_post_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t config_get_uri = {
+        .uri      = "/config/get",
+        .method   = HTTP_GET,
+        .handler  = config_get_handler,
+        .user_ctx = NULL,
+    };
+    httpd_uri_t config_set_uri = {
+        .uri      = "/config/set",
+        .method   = HTTP_POST,
+        .handler  = config_set_handler,
+        .user_ctx = NULL,
+    };
+    httpd_uri_t slider_event_uri = {
+        .uri      = "/slider/event",
+        .method   = HTTP_POST,
+        .handler  = slider_event_handler,
+        .user_ctx = NULL,
+    };
     httpd_uri_t static_uri = {
         .uri      = "/*",
         .method   = HTTP_GET,
@@ -328,5 +528,8 @@ void webserver_start(void)
     httpd_register_uri_handler(server, &info_uri);
     httpd_register_uri_handler(server, &position_uri);
     httpd_register_uri_handler(server, &ota_uri);
+    httpd_register_uri_handler(server, &config_get_uri);
+    httpd_register_uri_handler(server, &config_set_uri);
+    httpd_register_uri_handler(server, &slider_event_uri);
     httpd_register_uri_handler(server, &static_uri);
 }

@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "app_mqtt.h"
+#include "config.h"
 #include "console.h"
 #include "drv8452.h"
 #include "esp_attr.h"
@@ -15,6 +16,7 @@
 #include "esp_rom_sys.h"
 #include "hall_sensors.h"
 #include "led.h"
+#include "nvs_flash.h"
 #include "provisioning.h"
 #include "shaft_encoder.h"
 #include "slider.h"
@@ -70,6 +72,22 @@ void app_main(void)
 
     system_init();
     mqtt_client_init(mqtt_switch_handler, NULL);
+
+    // Initialize NVS flash for persistent storage
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
+    else
+    {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    // Initialize configuration module
+    ESP_ERROR_CHECK(config_init());
+
     ble_provisioning_start();
 
     ESP_ERROR_CHECK(led_init(&led_handle));
@@ -84,6 +102,15 @@ void app_main(void)
 
     ESP_ERROR_CHECK(hall_sensors_init(&hall_cfg, &hall_handle));
     ESP_LOGI(TAG, "Hall sensors initialized");
+
+    // Apply hall sensor inversion setting from config
+    config_data_t cfg;
+    ESP_ERROR_CHECK(config_get(&cfg));
+    ESP_ERROR_CHECK(hall_sensors_set_invert(hall_handle, cfg.invert_inputs));
+    if (cfg.invert_inputs)
+    {
+        ESP_LOGI(TAG, "Hall sensor inputs inverted");
+    }
 
     ESP_ERROR_CHECK(drv8452_sleep(drv8452_handle, false));
     vTaskDelay(pdMS_TO_TICKS(10));
