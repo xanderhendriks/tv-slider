@@ -69,6 +69,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             break;
         case MQTT_EVENT_DATA:
         {
+            ESP_LOGI(TAG, "Data received: data=%.*s", event->data_len, event->data);
             if (event->topic_len == (int) strlen(s_topic_switch) &&
                 strncmp(event->topic, s_topic_switch, event->topic_len) == 0)
             {
@@ -181,4 +182,15 @@ void mqtt_publish_position(int32_t position)
     char payload[16];
     snprintf(payload, sizeof(payload), "%" PRId32, position);
     esp_mqtt_client_publish(s_client, s_topic_position, payload, 0, 1, 1);
+}
+
+void mqtt_publish_status(bool on)
+{
+    if (!s_client)
+    {
+        return;
+    }
+
+    const char *payload = on ? "on" : "off";
+    esp_mqtt_client_publish(s_client, s_topic_state, payload, 0, 1, 1);
 }

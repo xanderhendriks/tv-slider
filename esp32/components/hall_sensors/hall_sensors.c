@@ -116,6 +116,22 @@ esp_err_t hall_sensors_set_invert(hall_sensors_handle_t handle, bool invert)
         return ESP_ERR_INVALID_ARG;
     }
     ctx->active_low = invert;
+
+    // Reconfigure GPIO interrupt types for all configured sensors
+    for (int i = 0; i < 4; ++i)
+    {
+        if (ctx->gpio_nums[i] >= 0 && ctx->isr_registered[i])
+        {
+            gpio_int_type_t intr_type = invert ? GPIO_INTR_NEGEDGE : GPIO_INTR_POSEDGE;
+            esp_err_t       err       = gpio_set_intr_type(ctx->gpio_nums[i], intr_type);
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Failed to set intr_type for GPIO %d (%d)", ctx->gpio_nums[i], err);
+                return err;
+            }
+        }
+    }
+
     return ESP_OK;
 }
 

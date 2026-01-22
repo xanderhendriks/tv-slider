@@ -17,6 +17,8 @@ void slider_start_timer(uint32_t interval_ms);
 bool slider_is_at_in_stop();
 bool slider_is_at_out_stop();
 void slider_fault_handler();
+void slider_status(bool on);
+void slider_position(int32_t position);
 
 // Enqueue an event to be processed by the slider state machine task
 bool slider_post_event(slider_state_machine_EventId event);

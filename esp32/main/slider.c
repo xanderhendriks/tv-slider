@@ -1,5 +1,6 @@
 #include "slider.h"
 
+#include "app_mqtt.h"
 #include "drv8452.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -7,6 +8,7 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 #include "hall_sensors.h"
+#include "position.h"
 #include "slider_state_machine.h"
 
 #define SPEED_MIN_HZ 40000
@@ -117,6 +119,21 @@ void slider_fault_handler()
 {
     ESP_LOGE(TAG, "Slider motor fault detected");
     // Additional fault handling code can be added here
+}
+
+void slider_status(bool on)
+{
+    ESP_LOGI(TAG, "Slider status update: %s", on ? "on" : "off");
+    // Publish status via MQTT
+    mqtt_publish_status(on);
+}
+
+void slider_position(int32_t position)
+{
+    // ESP_LOGI(TAG, "Slider position update: %" PRId32, position);
+    // Publish position via MQTT doesn't work here. All these callbacks are working directly from ISR context and should
+    // be rewritten. mqtt_publish_position(position);
+    position_set(position);
 }
 
 static uint8_t sensor_state()

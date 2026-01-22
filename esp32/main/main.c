@@ -173,18 +173,22 @@ static void IRAM_ATTR hall_sensor_handler(hall_sensor_t sensor, void *user_ctx)
         case HALL_SENSOR_IN_STOP:
             name = "IN_STOP";
             slider_post_event(slider_state_machine_EventId_SENSOR_IN_STOP);
+            slider_position(0);
             break;
         case HALL_SENSOR_IN_SLOW:
             name = "IN_SLOW";
             slider_post_event(slider_state_machine_EventId_SENSOR_IN_SLOW);
+            slider_position(25);
             break;
         case HALL_SENSOR_OUT_SLOW:
             name = "OUT_SLOW";
             slider_post_event(slider_state_machine_EventId_SENSOR_OUT_SLOW);
+            slider_position(75);
             break;
         case HALL_SENSOR_OUT_STOP:
             name = "OUT_STOP";
             slider_post_event(slider_state_machine_EventId_SENSOR_OUT_STOP);
+            slider_position(100);
             break;
         default:
             break;
@@ -198,6 +202,7 @@ static void mqtt_switch_handler(bool on, void *user_ctx)
     (void) user_ctx;
     ESP_LOGI(TAG, "MQTT switch update: %s", on ? "on" : "off");
     slider_post_event(on ? slider_state_machine_EventId_CMD_MOVE_OUT : slider_state_machine_EventId_CMD_MOVE_IN);
+    slider_status(on);
 }
 
 static void apply_config_cb(const config_data_t *cfg, void *user_ctx)

@@ -327,6 +327,8 @@ ERROR_STATE --> STOPPED_STATE : CMD_CLEAR_FAULT
 
 MOVING_OUT_STATE --> STOPPED_STATE : CMD_STOP
 
+MOVING_OUT_STATE --> IN_RAMP_UP_STATE : CMD_MOVE_IN [!slider_is_at_in_stop()]
+
 MOVING_OUT_STATE --> STOPPED_STATE : SENSOR_OUT_STOP
 
 MOVING_OUT_STATE --> ERROR_STATE : MOTOR_FAULT
@@ -338,6 +340,8 @@ OUT_RAMP_UP_STATE --> OUT_RAMP_DOWN_STATE : SENSOR_OUT_SLOW
 OUT_FULL_SPEED_STATE --> OUT_RAMP_DOWN_STATE : SENSOR_OUT_SLOW
 
 MOVING_IN_STATE --> STOPPED_STATE : CMD_STOP
+
+MOVING_IN_STATE --> OUT_RAMP_UP_STATE : CMD_MOVE_OUT [!slider_is_at_out_stop()]
 
 MOVING_IN_STATE --> STOPPED_STATE : SENSOR_IN_STOP
 
@@ -453,12 +457,12 @@ evaluateGuard = null;
             // ROOT.<InitialState> is a pseudo state and cannot have an `enter` trigger.
             
             // ROOT.<InitialState> behavior
-            // uml: / { this.tracer?.edgeTransition("edge16"); } TransitionTo(STOPPED_STATE)
+            // uml: / { this.tracer?.edgeTransition("edge18"); } TransitionTo(STOPPED_STATE)
             {
                 // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition). Already at LCA, no exiting required.
                 
-                // Step 2: Transition action: `this.tracer?.edgeTransition("edge16");`.
-                this.tracer?.edgeTransition("edge16");
+                // Step 2: Transition action: `this.tracer?.edgeTransition("edge18");`.
+                this.tracer?.edgeTransition("edge18");
                 
                 // Step 3: Enter/move towards transition target `STOPPED_STATE`.
                 this.#STOPPED_STATE_enter();
@@ -493,6 +497,7 @@ evaluateGuard = null;
                 switch (eventId)
                 {
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_IN_STATE_cmd_stop(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_OUT: this.#MOVING_IN_STATE_cmd_move_out(); break;
                     case slider_state_machine.EventId.SENSOR_IN_STOP: this.#MOVING_IN_STATE_sensor_in_stop(); break;
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_IN_STATE_motor_fault(); break;
                 }
@@ -503,6 +508,7 @@ evaluateGuard = null;
                 switch (eventId)
                 {
                     case slider_state_machine.EventId.SENSOR_IN_SLOW: this.#IN_FULL_SPEED_STATE_sensor_in_slow(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_OUT: this.#MOVING_IN_STATE_cmd_move_out(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_IN_STATE_motor_fault(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_IN_STATE_cmd_stop(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.SENSOR_IN_STOP: this.#MOVING_IN_STATE_sensor_in_stop(); break; // First ancestor handler for this event
@@ -514,6 +520,7 @@ evaluateGuard = null;
                 switch (eventId)
                 {
                     case slider_state_machine.EventId.TIMER_EXPIRED: this.#IN_RAMP_DOWN_STATE_timer_expired(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_OUT: this.#MOVING_IN_STATE_cmd_move_out(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_IN_STATE_motor_fault(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_IN_STATE_cmd_stop(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.SENSOR_IN_STOP: this.#MOVING_IN_STATE_sensor_in_stop(); break; // First ancestor handler for this event
@@ -526,6 +533,7 @@ evaluateGuard = null;
                 {
                     case slider_state_machine.EventId.TIMER_EXPIRED: this.#IN_RAMP_UP_STATE_timer_expired(); break;
                     case slider_state_machine.EventId.SENSOR_IN_SLOW: this.#IN_RAMP_UP_STATE_sensor_in_slow(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_OUT: this.#MOVING_IN_STATE_cmd_move_out(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_IN_STATE_motor_fault(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_IN_STATE_cmd_stop(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.SENSOR_IN_STOP: this.#MOVING_IN_STATE_sensor_in_stop(); break; // First ancestor handler for this event
@@ -537,6 +545,7 @@ evaluateGuard = null;
                 switch (eventId)
                 {
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_OUT_STATE_cmd_stop(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_IN: this.#MOVING_OUT_STATE_cmd_move_in(); break;
                     case slider_state_machine.EventId.SENSOR_OUT_STOP: this.#MOVING_OUT_STATE_sensor_out_stop(); break;
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_OUT_STATE_motor_fault(); break;
                 }
@@ -547,6 +556,7 @@ evaluateGuard = null;
                 switch (eventId)
                 {
                     case slider_state_machine.EventId.SENSOR_OUT_SLOW: this.#OUT_FULL_SPEED_STATE_sensor_out_slow(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_IN: this.#MOVING_OUT_STATE_cmd_move_in(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_OUT_STATE_motor_fault(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_OUT_STATE_cmd_stop(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.SENSOR_OUT_STOP: this.#MOVING_OUT_STATE_sensor_out_stop(); break; // First ancestor handler for this event
@@ -558,6 +568,7 @@ evaluateGuard = null;
                 switch (eventId)
                 {
                     case slider_state_machine.EventId.TIMER_EXPIRED: this.#OUT_RAMP_DOWN_STATE_timer_expired(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_IN: this.#MOVING_OUT_STATE_cmd_move_in(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_OUT_STATE_motor_fault(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_OUT_STATE_cmd_stop(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.SENSOR_OUT_STOP: this.#MOVING_OUT_STATE_sensor_out_stop(); break; // First ancestor handler for this event
@@ -570,6 +581,7 @@ evaluateGuard = null;
                 {
                     case slider_state_machine.EventId.TIMER_EXPIRED: this.#OUT_RAMP_UP_STATE_timer_expired(); break;
                     case slider_state_machine.EventId.SENSOR_OUT_SLOW: this.#OUT_RAMP_UP_STATE_sensor_out_slow(); break;
+                    case slider_state_machine.EventId.CMD_MOVE_IN: this.#MOVING_OUT_STATE_cmd_move_in(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.MOTOR_FAULT: this.#MOVING_OUT_STATE_motor_fault(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.CMD_STOP: this.#MOVING_OUT_STATE_cmd_stop(); break; // First ancestor handler for this event
                     case slider_state_machine.EventId.SENSOR_OUT_STOP: this.#MOVING_OUT_STATE_sensor_out_stop(); break; // First ancestor handler for this event
@@ -718,16 +730,39 @@ evaluateGuard = null;
         this.stateId = slider_state_machine.StateId.ROOT;
     }
     
-    #MOVING_IN_STATE_cmd_stop()
+    #MOVING_IN_STATE_cmd_move_out()
     {
         // MOVING_IN_STATE behavior
-        // uml: CMD_STOP / { this.tracer?.edgeTransition("edge10"); } TransitionTo(STOPPED_STATE)
+        // uml: CMD_MOVE_OUT [this.tracer?.log("🛡️ User evaluating guard: " + "!slider_is_at_out_stop()") || this.evaluateGuard("MOVING_IN_STATE","CMD_MOVE_OUT [!slider_is_at_out_stop()] TransitionTo(OUT_RAMP_UP_STATE)")] / { this.tracer?.edgeTransition("edge12"); } TransitionTo(OUT_RAMP_UP_STATE)
+        if (this.tracer?.log("🛡️ User evaluating guard: " + "!slider_is_at_out_stop()") || this.evaluateGuard("MOVING_IN_STATE","CMD_MOVE_OUT [!slider_is_at_out_stop()] TransitionTo(OUT_RAMP_UP_STATE)"))
         {
             // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
             this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge10");`.
-            this.tracer?.edgeTransition("edge10");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge12");`.
+            this.tracer?.edgeTransition("edge12");
+            
+            // Step 3: Enter/move towards transition target `OUT_RAMP_UP_STATE`.
+            this.#MOVING_OUT_STATE_enter();
+            this.#OUT_RAMP_UP_STATE_enter();
+            
+            // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
+            return;
+        } // end of behavior for MOVING_IN_STATE
+        
+        // No ancestor handles this event.
+    }
+    
+    #MOVING_IN_STATE_cmd_stop()
+    {
+        // MOVING_IN_STATE behavior
+        // uml: CMD_STOP / { this.tracer?.edgeTransition("edge11"); } TransitionTo(STOPPED_STATE)
+        {
+            // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
+            this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
+            
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge11");`.
+            this.tracer?.edgeTransition("edge11");
             
             // Step 3: Enter/move towards transition target `STOPPED_STATE`.
             this.#STOPPED_STATE_enter();
@@ -742,13 +777,13 @@ evaluateGuard = null;
     #MOVING_IN_STATE_motor_fault()
     {
         // MOVING_IN_STATE behavior
-        // uml: MOTOR_FAULT / { this.tracer?.edgeTransition("edge12"); } TransitionTo(ERROR_STATE)
+        // uml: MOTOR_FAULT / { this.tracer?.edgeTransition("edge14"); } TransitionTo(ERROR_STATE)
         {
             // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
             this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge12");`.
-            this.tracer?.edgeTransition("edge12");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge14");`.
+            this.tracer?.edgeTransition("edge14");
             
             // Step 3: Enter/move towards transition target `ERROR_STATE`.
             this.#ERROR_STATE_enter();
@@ -763,13 +798,13 @@ evaluateGuard = null;
     #MOVING_IN_STATE_sensor_in_stop()
     {
         // MOVING_IN_STATE behavior
-        // uml: SENSOR_IN_STOP / { this.tracer?.edgeTransition("edge11"); } TransitionTo(STOPPED_STATE)
+        // uml: SENSOR_IN_STOP / { this.tracer?.edgeTransition("edge13"); } TransitionTo(STOPPED_STATE)
         {
             // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
             this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge11");`.
-            this.tracer?.edgeTransition("edge11");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge13");`.
+            this.tracer?.edgeTransition("edge13");
             
             // Step 3: Enter/move towards transition target `STOPPED_STATE`.
             this.#STOPPED_STATE_enter();
@@ -820,13 +855,13 @@ evaluateGuard = null;
     #IN_FULL_SPEED_STATE_sensor_in_slow()
     {
         // IN_FULL_SPEED_STATE behavior
-        // uml: SENSOR_IN_SLOW / { this.tracer?.edgeTransition("edge15"); } TransitionTo(IN_RAMP_DOWN_STATE)
+        // uml: SENSOR_IN_SLOW / { this.tracer?.edgeTransition("edge17"); } TransitionTo(IN_RAMP_DOWN_STATE)
         {
             // Step 1: Exit states until we reach `MOVING_IN_STATE` state (Least Common Ancestor for transition).
             this.#IN_FULL_SPEED_STATE_exit();
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge15");`.
-            this.tracer?.edgeTransition("edge15");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge17");`.
+            this.tracer?.edgeTransition("edge17");
             
             // Step 3: Enter/move towards transition target `IN_RAMP_DOWN_STATE`.
             this.#IN_RAMP_DOWN_STATE_enter();
@@ -926,13 +961,13 @@ evaluateGuard = null;
     #IN_RAMP_UP_STATE_sensor_in_slow()
     {
         // IN_RAMP_UP_STATE behavior
-        // uml: SENSOR_IN_SLOW / { this.tracer?.edgeTransition("edge14"); } TransitionTo(IN_RAMP_DOWN_STATE)
+        // uml: SENSOR_IN_SLOW / { this.tracer?.edgeTransition("edge16"); } TransitionTo(IN_RAMP_DOWN_STATE)
         {
             // Step 1: Exit states until we reach `MOVING_IN_STATE` state (Least Common Ancestor for transition).
             this.#IN_RAMP_UP_STATE_exit();
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge14");`.
-            this.tracer?.edgeTransition("edge14");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge16");`.
+            this.tracer?.edgeTransition("edge16");
             
             // Step 3: Enter/move towards transition target `IN_RAMP_DOWN_STATE`.
             this.#IN_RAMP_DOWN_STATE_enter();
@@ -955,14 +990,14 @@ evaluateGuard = null;
         } // end of behavior for IN_RAMP_UP_STATE
         
         // IN_RAMP_UP_STATE behavior
-        // uml: TIMER_EXPIRED [this.tracer?.log("🛡️ User evaluating guard: " + "speed >= SLIDER_MAX_SPEED") || this.evaluateGuard("IN_RAMP_UP_STATE","TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(IN_FULL_SPEED_STATE)")] / { this.tracer?.edgeTransition("edge13"); } TransitionTo(IN_FULL_SPEED_STATE)
+        // uml: TIMER_EXPIRED [this.tracer?.log("🛡️ User evaluating guard: " + "speed >= SLIDER_MAX_SPEED") || this.evaluateGuard("IN_RAMP_UP_STATE","TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(IN_FULL_SPEED_STATE)")] / { this.tracer?.edgeTransition("edge15"); } TransitionTo(IN_FULL_SPEED_STATE)
         if (this.tracer?.log("🛡️ User evaluating guard: " + "speed >= SLIDER_MAX_SPEED") || this.evaluateGuard("IN_RAMP_UP_STATE","TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(IN_FULL_SPEED_STATE)"))
         {
             // Step 1: Exit states until we reach `MOVING_IN_STATE` state (Least Common Ancestor for transition).
             this.#IN_RAMP_UP_STATE_exit();
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge13");`.
-            this.tracer?.edgeTransition("edge13");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge15");`.
+            this.tracer?.edgeTransition("edge15");
             
             // Step 3: Enter/move towards transition target `IN_FULL_SPEED_STATE`.
             this.#IN_FULL_SPEED_STATE_enter();
@@ -1003,6 +1038,29 @@ evaluateGuard = null;
         this.stateId = slider_state_machine.StateId.ROOT;
     }
     
+    #MOVING_OUT_STATE_cmd_move_in()
+    {
+        // MOVING_OUT_STATE behavior
+        // uml: CMD_MOVE_IN [this.tracer?.log("🛡️ User evaluating guard: " + "!slider_is_at_in_stop()") || this.evaluateGuard("MOVING_OUT_STATE","CMD_MOVE_IN [!slider_is_at_in_stop()] TransitionTo(IN_RAMP_UP_STATE)")] / { this.tracer?.edgeTransition("edge5"); } TransitionTo(IN_RAMP_UP_STATE)
+        if (this.tracer?.log("🛡️ User evaluating guard: " + "!slider_is_at_in_stop()") || this.evaluateGuard("MOVING_OUT_STATE","CMD_MOVE_IN [!slider_is_at_in_stop()] TransitionTo(IN_RAMP_UP_STATE)"))
+        {
+            // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
+            this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
+            
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge5");`.
+            this.tracer?.edgeTransition("edge5");
+            
+            // Step 3: Enter/move towards transition target `IN_RAMP_UP_STATE`.
+            this.#MOVING_IN_STATE_enter();
+            this.#IN_RAMP_UP_STATE_enter();
+            
+            // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
+            return;
+        } // end of behavior for MOVING_OUT_STATE
+        
+        // No ancestor handles this event.
+    }
+    
     #MOVING_OUT_STATE_cmd_stop()
     {
         // MOVING_OUT_STATE behavior
@@ -1027,13 +1085,13 @@ evaluateGuard = null;
     #MOVING_OUT_STATE_motor_fault()
     {
         // MOVING_OUT_STATE behavior
-        // uml: MOTOR_FAULT / { this.tracer?.edgeTransition("edge6"); } TransitionTo(ERROR_STATE)
+        // uml: MOTOR_FAULT / { this.tracer?.edgeTransition("edge7"); } TransitionTo(ERROR_STATE)
         {
             // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
             this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge6");`.
-            this.tracer?.edgeTransition("edge6");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge7");`.
+            this.tracer?.edgeTransition("edge7");
             
             // Step 3: Enter/move towards transition target `ERROR_STATE`.
             this.#ERROR_STATE_enter();
@@ -1048,13 +1106,13 @@ evaluateGuard = null;
     #MOVING_OUT_STATE_sensor_out_stop()
     {
         // MOVING_OUT_STATE behavior
-        // uml: SENSOR_OUT_STOP / { this.tracer?.edgeTransition("edge5"); } TransitionTo(STOPPED_STATE)
+        // uml: SENSOR_OUT_STOP / { this.tracer?.edgeTransition("edge6"); } TransitionTo(STOPPED_STATE)
         {
             // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
             this.#exitUpToStateHandler(slider_state_machine.StateId.ROOT);
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge5");`.
-            this.tracer?.edgeTransition("edge5");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge6");`.
+            this.tracer?.edgeTransition("edge6");
             
             // Step 3: Enter/move towards transition target `STOPPED_STATE`.
             this.#STOPPED_STATE_enter();
@@ -1105,13 +1163,13 @@ evaluateGuard = null;
     #OUT_FULL_SPEED_STATE_sensor_out_slow()
     {
         // OUT_FULL_SPEED_STATE behavior
-        // uml: SENSOR_OUT_SLOW / { this.tracer?.edgeTransition("edge9"); } TransitionTo(OUT_RAMP_DOWN_STATE)
+        // uml: SENSOR_OUT_SLOW / { this.tracer?.edgeTransition("edge10"); } TransitionTo(OUT_RAMP_DOWN_STATE)
         {
             // Step 1: Exit states until we reach `MOVING_OUT_STATE` state (Least Common Ancestor for transition).
             this.#OUT_FULL_SPEED_STATE_exit();
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge9");`.
-            this.tracer?.edgeTransition("edge9");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge10");`.
+            this.tracer?.edgeTransition("edge10");
             
             // Step 3: Enter/move towards transition target `OUT_RAMP_DOWN_STATE`.
             this.#OUT_RAMP_DOWN_STATE_enter();
@@ -1211,13 +1269,13 @@ evaluateGuard = null;
     #OUT_RAMP_UP_STATE_sensor_out_slow()
     {
         // OUT_RAMP_UP_STATE behavior
-        // uml: SENSOR_OUT_SLOW / { this.tracer?.edgeTransition("edge8"); } TransitionTo(OUT_RAMP_DOWN_STATE)
+        // uml: SENSOR_OUT_SLOW / { this.tracer?.edgeTransition("edge9"); } TransitionTo(OUT_RAMP_DOWN_STATE)
         {
             // Step 1: Exit states until we reach `MOVING_OUT_STATE` state (Least Common Ancestor for transition).
             this.#OUT_RAMP_UP_STATE_exit();
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge8");`.
-            this.tracer?.edgeTransition("edge8");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge9");`.
+            this.tracer?.edgeTransition("edge9");
             
             // Step 3: Enter/move towards transition target `OUT_RAMP_DOWN_STATE`.
             this.#OUT_RAMP_DOWN_STATE_enter();
@@ -1240,14 +1298,14 @@ evaluateGuard = null;
         } // end of behavior for OUT_RAMP_UP_STATE
         
         // OUT_RAMP_UP_STATE behavior
-        // uml: TIMER_EXPIRED [this.tracer?.log("🛡️ User evaluating guard: " + "speed >= SLIDER_MAX_SPEED") || this.evaluateGuard("OUT_RAMP_UP_STATE","TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(OUT_FULL_SPEED_STATE)")] / { this.tracer?.edgeTransition("edge7"); } TransitionTo(OUT_FULL_SPEED_STATE)
+        // uml: TIMER_EXPIRED [this.tracer?.log("🛡️ User evaluating guard: " + "speed >= SLIDER_MAX_SPEED") || this.evaluateGuard("OUT_RAMP_UP_STATE","TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(OUT_FULL_SPEED_STATE)")] / { this.tracer?.edgeTransition("edge8"); } TransitionTo(OUT_FULL_SPEED_STATE)
         if (this.tracer?.log("🛡️ User evaluating guard: " + "speed >= SLIDER_MAX_SPEED") || this.evaluateGuard("OUT_RAMP_UP_STATE","TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(OUT_FULL_SPEED_STATE)"))
         {
             // Step 1: Exit states until we reach `MOVING_OUT_STATE` state (Least Common Ancestor for transition).
             this.#OUT_RAMP_UP_STATE_exit();
             
-            // Step 2: Transition action: `this.tracer?.edgeTransition("edge7");`.
-            this.tracer?.edgeTransition("edge7");
+            // Step 2: Transition action: `this.tracer?.edgeTransition("edge8");`.
+            this.tracer?.edgeTransition("edge8");
             
             // Step 3: Enter/move towards transition target `OUT_FULL_SPEED_STATE`.
             this.#OUT_FULL_SPEED_STATE_enter();
@@ -1448,11 +1506,13 @@ evaluateGuard = null;
     "CMD_CLEAR_FAULT"
   ],
   "MOVING_OUT_STATE": [
+    "CMD_MOVE_IN",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_OUT_STOP"
   ],
   "OUT_RAMP_UP_STATE": [
+    "CMD_MOVE_IN",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_OUT_SLOW",
@@ -1460,23 +1520,27 @@ evaluateGuard = null;
     "TIMER_EXPIRED"
   ],
   "OUT_FULL_SPEED_STATE": [
+    "CMD_MOVE_IN",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_OUT_SLOW",
     "SENSOR_OUT_STOP"
   ],
   "OUT_RAMP_DOWN_STATE": [
+    "CMD_MOVE_IN",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_OUT_STOP",
     "TIMER_EXPIRED"
   ],
   "MOVING_IN_STATE": [
+    "CMD_MOVE_OUT",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_IN_STOP"
   ],
   "IN_RAMP_UP_STATE": [
+    "CMD_MOVE_OUT",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_IN_SLOW",
@@ -1484,12 +1548,14 @@ evaluateGuard = null;
     "TIMER_EXPIRED"
   ],
   "IN_FULL_SPEED_STATE": [
+    "CMD_MOVE_OUT",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_IN_SLOW",
     "SENSOR_IN_STOP"
   ],
   "IN_RAMP_DOWN_STATE": [
+    "CMD_MOVE_OUT",
     "CMD_STOP",
     "MOTOR_FAULT",
     "SENSOR_IN_STOP",

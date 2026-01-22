@@ -28,6 +28,8 @@ static void MOVING_IN_STATE_enter(slider_state_machine* sm);
 
 static void MOVING_IN_STATE_exit(slider_state_machine* sm);
 
+static void MOVING_IN_STATE_cmd_move_out(slider_state_machine* sm);
+
 static void MOVING_IN_STATE_cmd_stop(slider_state_machine* sm);
 
 static void MOVING_IN_STATE_motor_fault(slider_state_machine* sm);
@@ -57,6 +59,8 @@ static void IN_RAMP_UP_STATE_timer_expired(slider_state_machine* sm);
 static void MOVING_OUT_STATE_enter(slider_state_machine* sm);
 
 static void MOVING_OUT_STATE_exit(slider_state_machine* sm);
+
+static void MOVING_OUT_STATE_cmd_move_in(slider_state_machine* sm);
 
 static void MOVING_OUT_STATE_cmd_stop(slider_state_machine* sm);
 
@@ -157,6 +161,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             switch (event_id)
             {
                 case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break;
                 case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break;
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break;
                 
@@ -169,6 +174,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             switch (event_id)
             {
                 case slider_state_machine_EventId_SENSOR_IN_SLOW: IN_FULL_SPEED_STATE_sensor_in_slow(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break; // First ancestor handler for this event
@@ -182,6 +188,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             switch (event_id)
             {
                 case slider_state_machine_EventId_TIMER_EXPIRED: IN_RAMP_DOWN_STATE_timer_expired(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break; // First ancestor handler for this event
@@ -196,6 +203,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             {
                 case slider_state_machine_EventId_TIMER_EXPIRED: IN_RAMP_UP_STATE_timer_expired(sm); break;
                 case slider_state_machine_EventId_SENSOR_IN_SLOW: IN_RAMP_UP_STATE_sensor_in_slow(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break; // First ancestor handler for this event
@@ -209,6 +217,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             switch (event_id)
             {
                 case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break;
                 case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break;
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break;
                 
@@ -221,6 +230,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             switch (event_id)
             {
                 case slider_state_machine_EventId_SENSOR_OUT_SLOW: OUT_FULL_SPEED_STATE_sensor_out_slow(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break; // First ancestor handler for this event
@@ -234,6 +244,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             switch (event_id)
             {
                 case slider_state_machine_EventId_TIMER_EXPIRED: OUT_RAMP_DOWN_STATE_timer_expired(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break; // First ancestor handler for this event
@@ -248,6 +259,7 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
             {
                 case slider_state_machine_EventId_TIMER_EXPIRED: OUT_RAMP_UP_STATE_timer_expired(sm); break;
                 case slider_state_machine_EventId_SENSOR_OUT_SLOW: OUT_RAMP_UP_STATE_sensor_out_slow(sm); break;
+                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break; // First ancestor handler for this event
                 case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break; // First ancestor handler for this event
@@ -369,6 +381,28 @@ static void MOVING_IN_STATE_enter(slider_state_machine* sm)
 static void MOVING_IN_STATE_exit(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_ROOT;
+}
+
+static void MOVING_IN_STATE_cmd_move_out(slider_state_machine* sm)
+{
+    // MOVING_IN_STATE behavior
+    // uml: CMD_MOVE_OUT [!slider_is_at_out_stop()] TransitionTo(OUT_RAMP_UP_STATE)
+    if (!slider_is_at_out_stop())
+    {
+        // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
+        exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
+        
+        // Step 2: Transition action: ``.
+        
+        // Step 3: Enter/move towards transition target `OUT_RAMP_UP_STATE`.
+        MOVING_OUT_STATE_enter(sm);
+        OUT_RAMP_UP_STATE_enter(sm);
+        
+        // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
+        return;
+    } // end of behavior for MOVING_IN_STATE
+    
+    // No ancestor handles this event.
 }
 
 static void MOVING_IN_STATE_cmd_stop(slider_state_machine* sm)
@@ -600,6 +634,28 @@ static void MOVING_OUT_STATE_enter(slider_state_machine* sm)
 static void MOVING_OUT_STATE_exit(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_ROOT;
+}
+
+static void MOVING_OUT_STATE_cmd_move_in(slider_state_machine* sm)
+{
+    // MOVING_OUT_STATE behavior
+    // uml: CMD_MOVE_IN [!slider_is_at_in_stop()] TransitionTo(IN_RAMP_UP_STATE)
+    if (!slider_is_at_in_stop())
+    {
+        // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
+        exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
+        
+        // Step 2: Transition action: ``.
+        
+        // Step 3: Enter/move towards transition target `IN_RAMP_UP_STATE`.
+        MOVING_IN_STATE_enter(sm);
+        IN_RAMP_UP_STATE_enter(sm);
+        
+        // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
+        return;
+    } // end of behavior for MOVING_OUT_STATE
+    
+    // No ancestor handles this event.
 }
 
 static void MOVING_OUT_STATE_cmd_stop(slider_state_machine* sm)
