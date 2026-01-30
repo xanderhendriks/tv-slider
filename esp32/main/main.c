@@ -129,11 +129,11 @@ void app_main(void)
         ESP_LOGI(TAG, "DRV8452 fault register: 0x%02X", value);
 
         ESP_ERROR_CHECK(
-            drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_128));
+            drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_64));
         ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL4, &value));
         ESP_LOGI(TAG, "DRV8452 CTRL4 register: 0x%02X", value);
         ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL4, value | DRV8452_CTRL4_EN_STL_EN));
-        ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL11, DRV8452_CTRL11_TRQ_DAC_37_5_PCT));
+        ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL11, DRV8452_CTRL11_TRQ_DAC_50_PCT));
         ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL13, &value));
         ESP_LOGI(TAG, "DRV8452 CTRL13 register: 0x%02X", value);
         ESP_ERROR_CHECK(
@@ -149,7 +149,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting console...");
     ESP_ERROR_CHECK(console_start(drv8452_handle, encoder_handle, hall_handle, led_handle));
 
-    slider_init(hall_handle, drv8452_handle);
+    slider_init(hall_handle, drv8452_handle, encoder_handle);
 
     while (true)
     {

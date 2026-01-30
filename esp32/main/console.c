@@ -1027,7 +1027,7 @@ static int cmd_encoder_count(int argc, char **argv)
         return 1;
     }
 
-    int       count = 0;
+    int32_t   count = 0;
     esp_err_t err   = shaft_encoder_get_count(s_encoder_handle, &count);
     if (err != ESP_OK)
     {
@@ -1035,7 +1035,7 @@ static int cmd_encoder_count(int argc, char **argv)
         return 1;
     }
 
-    printf("Encoder count: %d\n", count);
+    printf("Encoder count: %ld\n", count);
     return 0;
 }
 

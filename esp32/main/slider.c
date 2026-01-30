@@ -14,21 +14,22 @@
 #define SPEED_MIN_HZ 40000
 #define SPEED_MAX_HZ 150000
 
-static const char           *TAG = "slider";
-static slider_state_machine  slider_sm;
-static QueueHandle_t         slider_event_queue;
-static TimerHandle_t         slider_timer;
-static hall_sensors_handle_t slider_hall_sensors;
-static drv8452_handle_t      slider_drv8452;
+static const char            *TAG = "slider";
+static slider_state_machine   slider_sm;
+static QueueHandle_t          slider_event_queue;
+static TimerHandle_t          slider_timer;
+static hall_sensors_handle_t  slider_hall_sensors;
+static drv8452_handle_t       slider_drv8452;
+static shaft_encoder_handle_t slider_encoder;
+static uint8_t                sensor_state();
+static void                   event_task(void *arg);
+static void                   timer_callback(TimerHandle_t xTimer);
 
-static uint8_t sensor_state();
-static void    event_task(void *arg);
-static void    timer_callback(TimerHandle_t xTimer);
-
-void slider_init(hall_sensors_handle_t hall_sensors, drv8452_handle_t drv8452)
+void slider_init(hall_sensors_handle_t hall_sensors, drv8452_handle_t drv8452, shaft_encoder_handle_t encoder)
 {
     slider_hall_sensors = hall_sensors;
     slider_drv8452      = drv8452;
+    slider_encoder      = encoder;
 
     slider_state_machine_ctor(&slider_sm);
     slider_state_machine_start(&slider_sm);
@@ -61,7 +62,7 @@ void slider_direction_set(slider_direction_t direction)
 {
     ESP_LOGI(TAG, "Slider direction set to %s", direction == SLIDER_DIRECTION_IN ? "IN" : "OUT");
 
-    drv8452_direction(slider_drv8452, direction == SLIDER_DIRECTION_IN);
+    drv8452_direction(slider_drv8452, direction == SLIDER_DIRECTION_OUT);
 }
 
 void slider_start_timer(uint32_t interval_ms)
@@ -117,6 +118,7 @@ bool slider_is_at_out_stop()
 
 void slider_fault_handler()
 {
+    slider_motor_enable(false);
     ESP_LOGE(TAG, "Slider motor fault detected");
     // Additional fault handling code can be added here
 }
@@ -151,12 +153,35 @@ static void event_task(void *arg)
 {
     (void) arg;
     slider_state_machine_EventId event;
+    int32_t                      last_position = -1;  // Initialize to invalid position
+    shaft_encoder_get_count(slider_encoder, &last_position);
     for (;;)
     {
-        if (xQueueReceive(slider_event_queue, &event, portMAX_DELAY) == pdTRUE)
+        // Wait up to 100 ms for an event and perform stall check
+        if (xQueueReceive(slider_event_queue, &event, pdMS_TO_TICKS(100)) == pdTRUE)
         {
             ESP_LOGI(TAG, "Processing slider event %s", slider_state_machine_event_id_to_string(event));
             slider_state_machine_dispatch_event(&slider_sm, event);
+        }
+
+        // Periodic stall check every 100 ms when supposed to be moving
+        if (slider_sm.state_id != slider_state_machine_StateId_STOPPED_STATE &&
+            slider_sm.state_id != slider_state_machine_StateId_ERROR_STATE)
+        {
+            int32_t current_position = -1;
+            shaft_encoder_get_count(slider_encoder, &current_position);
+            // Ignore check if position is not yet initialized
+            if (current_position != -1 && last_position != -1)
+            {
+                bool speed_requested = (slider_sm.vars.speed > 0);
+                if (speed_requested && current_position == last_position)
+                {
+                    ESP_LOGE(TAG, "Stall detected: position unchanged while moving");
+                    slider_state_machine_dispatch_event(&slider_sm, slider_state_machine_EventId_MOTOR_FAULT);
+                }
+            }
+            // Update last_position for next comparison
+            last_position = current_position;
         }
     }
 }

@@ -6,10 +6,11 @@
 
 #include "drv8452.h"
 #include "hall_sensors.h"
+#include "shaft_encoder.h"
 #include "slider_state_machine.h"
 #include "slider_types.h"
 
-void slider_init(hall_sensors_handle_t hall_sensors, drv8452_handle_t drv8452);
+void slider_init(hall_sensors_handle_t hall_sensors, drv8452_handle_t drv8452, shaft_encoder_handle_t encoder);
 void slider_motor_enable(bool enable);
 void slider_speed_set(uint16_t speed);
 void slider_direction_set(slider_direction_t direction);

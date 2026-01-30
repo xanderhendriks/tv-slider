@@ -133,7 +133,7 @@ esp_err_t shaft_encoder_clear(shaft_encoder_handle_t handle)
     return pcnt_unit_clear_count(ctx->unit);
 }
 
-esp_err_t shaft_encoder_get_count(shaft_encoder_handle_t handle, int *count)
+esp_err_t shaft_encoder_get_count(shaft_encoder_handle_t handle, int32_t *count)
 {
     shaft_encoder_ctx_t *ctx = handle;
 
@@ -142,7 +142,7 @@ esp_err_t shaft_encoder_get_count(shaft_encoder_handle_t handle, int *count)
         return ESP_ERR_INVALID_ARG;
     }
 
-    return pcnt_unit_get_count(ctx->unit, count);
+    return pcnt_unit_get_count(ctx->unit, (int *) count);
 }
 
 esp_err_t shaft_encoder_deinit(shaft_encoder_handle_t handle)

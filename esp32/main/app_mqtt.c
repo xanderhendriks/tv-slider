@@ -191,6 +191,6 @@ void mqtt_publish_status(bool on)
         return;
     }
 
-    const char *payload = on ? "on" : "off";
+    const char *payload = on ? "ON" : "OFF";
     esp_mqtt_client_publish(s_client, s_topic_state, payload, 0, 1, 1);
 }

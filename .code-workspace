@@ -6,5 +6,9 @@
         {
             "path": "."
         }
-    ]
+    ],
+    "settings": {
+        "idf.espIdfPath": "${workspaceFolder:esp32}/../..",
+        "idf.toolsPath": "${workspaceFolder:esp32}/../../.espressif"
+    }
 }
