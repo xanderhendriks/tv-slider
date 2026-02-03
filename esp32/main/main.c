@@ -129,7 +129,7 @@ void app_main(void)
         ESP_LOGI(TAG, "DRV8452 fault register: 0x%02X", value);
 
         ESP_ERROR_CHECK(
-            drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_64));
+            drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL2, DRV8452_CTRL2_MICROSTEP_MODE_1_OVER_128));
         ESP_ERROR_CHECK(drv8452_register_read(drv8452_handle, DRV8452_REG_CTRL4, &value));
         ESP_LOGI(TAG, "DRV8452 CTRL4 register: 0x%02X", value);
         ESP_ERROR_CHECK(drv8452_register_write(drv8452_handle, DRV8452_REG_CTRL4, value | DRV8452_CTRL4_EN_STL_EN));

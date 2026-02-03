@@ -11,7 +11,7 @@
 #include "position.h"
 #include "slider_state_machine.h"
 
-#define SPEED_MIN_HZ 40000
+#define SPEED_MIN_HZ 70000
 #define SPEED_MAX_HZ 150000
 
 static const char            *TAG = "slider";
