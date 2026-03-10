@@ -24,4 +24,7 @@ void slider_position(int32_t position);
 // Enqueue an event to be processed by the slider state machine task
 bool slider_post_event(slider_state_machine_EventId event);
 
+// Returns the current state machine state ID
+slider_state_machine_StateId slider_get_state_id(void);
+
 #endif  // SLIDER_H

@@ -10,7 +10,7 @@
         window.addEventListener("load", function () {
             load_info();
             init_tv_view();
-            start_position_updates();
+            start_ws();
             load_config_handler();
         });
     </script>
@@ -42,6 +42,7 @@
                     <li><a href="#" class="tablinks active" onclick="open_tab(event, 'Control')">Control</a></li>
                     <li><a href="#" class="tablinks" onclick="open_tab(event, 'Info')">Info</a></li>
                     <li><a href="#" class="tablinks" onclick="open_tab(event, 'Config')">Config</a></li>
+                    <li><a href="#" class="tablinks" onclick="open_tab(event, 'Debug')">Debug</a></li>
                     <li><a href="#" class="tablinks" onclick="open_tab(event, 'OTA')">OTA</a></li>
                 </ul>
 
@@ -166,6 +167,29 @@
                                     style="width: 80px; height: 40px; font-size: 16px; vertical-align: middle">Save</button>
                                 <button onclick="load_config_handler()"
                                     style="width: 80px; height: 40px; font-size: 16px; margin-left: 10px; vertical-align: middle">Reload</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div id="Debug" class="tabcontent">
+                    <table width="600" align="center">
+                        <tr>
+                            <td style="text-align: center; padding: 10px 0">
+                                <button onclick="reboot_device()"
+                                    style="width: 120px; height: 40px; font-size: 16px; vertical-align: middle">Reboot
+                                    Device</button>
+                                <button onclick="fetch_logs()"
+                                    style="width: 120px; height: 40px; font-size: 16px; margin-left: 10px; vertical-align: middle">Fetch
+                                    Logs</button>
+                                <button onclick="clear_logs_display()"
+                                    style="width: 80px; height: 40px; font-size: 16px; margin-left: 10px; vertical-align: middle">Clear</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <pre id="log_output"
+                                    style="width: 576px; height: 300px; overflow-y: scroll; background: #1e1e1e; color: #d4d4d4; font-size: 11px; padding: 8px; margin: 0; border: 1px solid #555; white-space: pre-wrap; word-break: break-all;"></pre>
                             </td>
                         </tr>
                     </table>

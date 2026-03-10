@@ -113,8 +113,8 @@ void ble_provisioning_start(void)
         return;
     }
 
-    char service_name[16];
-    snprintf(service_name, sizeof(service_name), "ESP32C6-%02X%02X%02X", mac[3], mac[4], mac[5]);
+    char service_name[32];
+    snprintf(service_name, sizeof(service_name), "tv-slider-%02X%02X%02X", mac[3], mac[4], mac[5]);
 
     const char *pop = "esp32c6";
     ESP_LOGI(TAG, "Starting BLE provisioning, service name: %s, PoP: %s", service_name, pop);

@@ -10,6 +10,7 @@
 #include "app_mqtt.h"
 #include "config.h"
 #include "console.h"
+#include "log_buffer.h"
 #include "drv8452.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -77,6 +78,8 @@ void app_main(void)
         .callback          = hall_sensor_handler,
         .user_ctx          = NULL,
     };
+
+    log_buffer_install();
 
     system_init();
     mqtt_client_init(mqtt_switch_handler, NULL);

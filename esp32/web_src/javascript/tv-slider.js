@@ -27,8 +27,6 @@ function rest_call(uri, callback, complete_callback) {
     });
 }
 
-var tv_position_timer = null;
-
 function init_tv_view() {
     var $view = $("#tv-view");
     var $unknown = $("#tv-unknown");
@@ -75,29 +73,45 @@ function render_tv_position(position) {
     $sliding_layer.css("width", clamped + "%");
 }
 
-function update_position_handler() {
-    rest_call('/position/get', function (data) {
-        var position = parseInt(data && data.position, 10);
-        if (isNaN(position)) {
-            position = -1;
-        }
-        render_tv_position(position);
-    }, function () {
-        tv_position_timer = setTimeout(function () {
-            update_position_handler();
-        }, 150);
-    });
-}
+var ws = null;
+var ws_reconnect_timer = null;
 
-function start_position_updates() {
-    if (tv_position_timer) {
-        return;
+function start_ws() {
+    if (ws_reconnect_timer) {
+        clearTimeout(ws_reconnect_timer);
+        ws_reconnect_timer = null;
     }
-    update_position_handler();
-}
+    var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    var url = protocol + "//" + window.location.host + "/ws";
+    ws = new WebSocket(url);
 
-function update_status_start() {
-    update_status_handler();
+    ws.onopen = function () {
+        console.log("WebSocket connected");
+    };
+
+    ws.onmessage = function (event) {
+        try {
+            var data = JSON.parse(event.data);
+            if (data.position !== undefined) {
+                render_tv_position(data.position);
+            }
+            if (data.state !== undefined) {
+                var display = data.state.replace(/_STATE$/, "").replace(/_/g, " ");
+                $('#device_mode').text(display);
+            }
+        } catch (e) {
+            console.error("WebSocket message parse error:", e);
+        }
+    };
+
+    ws.onclose = function () {
+        console.log("WebSocket closed, reconnecting in 2s...");
+        ws_reconnect_timer = setTimeout(start_ws, 2000);
+    };
+
+    ws.onerror = function (err) {
+        console.error("WebSocket error", err);
+    };
 }
 
 function exec_if_not_idling(callback) {
@@ -299,12 +313,48 @@ function slider_stop() {
     slider_post_event("cmd_stop");
 }
 
+function fetch_logs() {
+    var $out = $('#log_output');
+    $out.text('Fetching...');
+    $.ajax({
+        url: '/logs/get',
+        cache: false,
+        success: function (data) {
+            $out.text(data);
+            // Auto-scroll to bottom
+            $out.scrollTop($out[0].scrollHeight);
+        },
+        error: function (xhr, status, err) {
+            $out.text('Failed to fetch logs: ' + err);
+        }
+    });
+}
+
+function clear_logs_display() {
+    $('#log_output').text('');
+}
+
+function reboot_device() {
+    $.ajax({
+        url: '/reboot',
+        type: 'POST',
+        success: function () {
+            $("#config_status_message").text("Rebooting device...").css("color", "green");
+            setTimeout(function () {
+                window.location.href = '/';
+            }, 3000);
+        },
+        error: function () {
+            $("#config_status_message").text("Failed to reboot device").css("color", "red");
+        }
+    });
+}
+
 if (typeof window !== "undefined") {
     window.open_tab = open_tab;
     window.rest_call = rest_call;
     window.init_tv_view = init_tv_view;
-    window.start_position_updates = start_position_updates;
-    window.update_status_start = update_status_start;
+    window.start_ws = start_ws;
     window.exec_if_not_idling = exec_if_not_idling;
     window.update_status_handler = update_status_handler;
     window.load_info = load_info;
@@ -317,4 +367,7 @@ if (typeof window !== "undefined") {
     window.slider_move_in = slider_move_in;
     window.slider_move_out = slider_move_out;
     window.slider_stop = slider_stop;
+    window.reboot_device = reboot_device;
+    window.fetch_logs = fetch_logs;
+    window.clear_logs_display = clear_logs_display;
 }

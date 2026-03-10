@@ -21,15 +21,23 @@
 #include "esp_partition.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "lwip/inet.h"
+#include "log_buffer.h"
 #include "position.h"
 #include "slider.h"
+#include "slider_state_machine.h"
 
 static const char *TAG = "webserver";
 
 static config_apply_cb s_config_apply_cb  = NULL;
 static void           *s_config_apply_ctx = NULL;
+
+#define MAX_WS_CLIENTS 4
+static httpd_handle_t    s_server      = NULL;
+static int               s_ws_fds[MAX_WS_CLIENTS];
+static SemaphoreHandle_t s_ws_mutex    = NULL;
 
 void webserver_set_config_apply_callback(config_apply_cb cb, void *user_ctx)
 {
@@ -114,6 +122,80 @@ static esp_err_t send_asset(httpd_req_t *req, const embedded_asset_t *asset, con
     httpd_resp_set_type(req, content_type);
     httpd_resp_send(req, (const char *) asset->start, len);
     return ESP_OK;
+}
+
+static esp_err_t ws_handler(httpd_req_t *req)
+{
+    if (req->method == HTTP_GET)
+    {
+        // WebSocket handshake - store client fd
+        int fd = httpd_req_to_sockfd(req);
+        ESP_LOGI(TAG, "WebSocket client connected, fd=%d", fd);
+        xSemaphoreTake(s_ws_mutex, portMAX_DELAY);
+        for (int i = 0; i < MAX_WS_CLIENTS; i++)
+        {
+            if (s_ws_fds[i] == -1)
+            {
+                s_ws_fds[i] = fd;
+                break;
+            }
+        }
+        xSemaphoreGive(s_ws_mutex);
+        return ESP_OK;
+    }
+    // Consume any incoming frames (commands come via REST)
+    httpd_ws_frame_t frame = {.type = HTTPD_WS_TYPE_TEXT};
+    uint8_t          buf[64];
+    frame.payload = buf;
+    httpd_ws_recv_frame(req, &frame, sizeof(buf) - 1);
+    return ESP_OK;
+}
+
+static void ws_push_task(void *arg)
+{
+    int32_t                      last_position = INT32_MIN;
+    slider_state_machine_StateId last_state    = (slider_state_machine_StateId) -1;
+
+    while (1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        int32_t                      position = position_get();
+        slider_state_machine_StateId state    = slider_get_state_id();
+
+        if (position == last_position && state == last_state)
+        {
+            continue;
+        }
+        last_position = position;
+        last_state    = state;
+
+        char buf[128];
+        snprintf(buf, sizeof(buf), "{\"position\":%d,\"state\":\"%s\"}",
+                 (int) position, slider_state_machine_state_id_to_string(state));
+
+        httpd_ws_frame_t frame = {
+            .type    = HTTPD_WS_TYPE_TEXT,
+            .payload = (uint8_t *) buf,
+            .len     = strlen(buf),
+            .final   = true,
+        };
+
+        xSemaphoreTake(s_ws_mutex, portMAX_DELAY);
+        for (int i = 0; i < MAX_WS_CLIENTS; i++)
+        {
+            if (s_ws_fds[i] != -1)
+            {
+                esp_err_t err = httpd_ws_send_frame_async(s_server, s_ws_fds[i], &frame);
+                if (err != ESP_OK)
+                {
+                    ESP_LOGI(TAG, "WebSocket client fd=%d disconnected", s_ws_fds[i]);
+                    s_ws_fds[i] = -1;
+                }
+            }
+        }
+        xSemaphoreGive(s_ws_mutex);
+    }
 }
 
 static esp_err_t static_get_handler(httpd_req_t *req)
@@ -285,6 +367,15 @@ static esp_err_t ota_post_handler(httpd_req_t *req)
     }
 
     httpd_resp_sendstr(req, "OK");
+    vTaskDelay(pdMS_TO_TICKS(200));
+    esp_restart();
+    return ESP_OK;
+}
+
+static esp_err_t reboot_post_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_sendstr(req, "{\"status\":\"rebooting\"}");
     vTaskDelay(pdMS_TO_TICKS(200));
     esp_restart();
     return ESP_OK;
@@ -475,15 +566,37 @@ static esp_err_t slider_event_handler(httpd_req_t *req)
     }
 }
 
+static esp_err_t logs_get_handler(httpd_req_t *req)
+{
+    char *buf = malloc(LOG_BUF_SIZE + 1);
+    if (!buf)
+    {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Out of memory");
+        return ESP_FAIL;
+    }
+    log_buffer_get(buf, LOG_BUF_SIZE + 1);
+    httpd_resp_set_type(req, "text/plain");
+    httpd_resp_send(req, buf, HTTPD_RESP_USE_STRLEN);
+    free(buf);
+    return ESP_OK;
+}
+
 void webserver_start(void)
 {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    httpd_handle_t server = NULL;
+    // Initialise WebSocket state
+    s_ws_mutex = xSemaphoreCreateMutex();
+    for (int i = 0; i < MAX_WS_CLIENTS; i++)
+    {
+        s_ws_fds[i] = -1;
+    }
 
-    config.uri_match_fn = httpd_uri_match_wildcard;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    config.uri_match_fn     = httpd_uri_match_wildcard;
+    config.max_uri_handlers = 14;
 
     ESP_LOGI(TAG, "Starting HTTP server on port %d", config.server_port);
-    if (httpd_start(&server, &config) != ESP_OK)
+    if (httpd_start(&s_server, &config) != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to start HTTP server");
         return;
@@ -513,6 +626,12 @@ void webserver_start(void)
         .handler  = ota_post_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t reboot_uri = {
+        .uri      = "/reboot",
+        .method   = HTTP_POST,
+        .handler  = reboot_post_handler,
+        .user_ctx = NULL,
+    };
     httpd_uri_t config_get_uri = {
         .uri      = "/config/get",
         .method   = HTTP_GET,
@@ -531,6 +650,19 @@ void webserver_start(void)
         .handler  = slider_event_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t logs_uri = {
+        .uri      = "/logs/get",
+        .method   = HTTP_GET,
+        .handler  = logs_get_handler,
+        .user_ctx = NULL,
+    };
+    httpd_uri_t ws_uri = {
+        .uri          = "/ws",
+        .method       = HTTP_GET,
+        .handler      = ws_handler,
+        .user_ctx     = NULL,
+        .is_websocket = true,
+    };
     httpd_uri_t static_uri = {
         .uri      = "/*",
         .method   = HTTP_GET,
@@ -538,12 +670,17 @@ void webserver_start(void)
         .user_ctx = NULL,
     };
 
-    httpd_register_uri_handler(server, &status_uri);
-    httpd_register_uri_handler(server, &info_uri);
-    httpd_register_uri_handler(server, &position_uri);
-    httpd_register_uri_handler(server, &ota_uri);
-    httpd_register_uri_handler(server, &config_get_uri);
-    httpd_register_uri_handler(server, &config_set_uri);
-    httpd_register_uri_handler(server, &slider_event_uri);
-    httpd_register_uri_handler(server, &static_uri);
+    httpd_register_uri_handler(s_server, &logs_uri);
+    httpd_register_uri_handler(s_server, &ws_uri);
+    httpd_register_uri_handler(s_server, &status_uri);
+    httpd_register_uri_handler(s_server, &info_uri);
+    httpd_register_uri_handler(s_server, &position_uri);
+    httpd_register_uri_handler(s_server, &ota_uri);
+    httpd_register_uri_handler(s_server, &reboot_uri);
+    httpd_register_uri_handler(s_server, &config_get_uri);
+    httpd_register_uri_handler(s_server, &config_set_uri);
+    httpd_register_uri_handler(s_server, &slider_event_uri);
+    httpd_register_uri_handler(s_server, &static_uri);
+
+    xTaskCreate(ws_push_task, "ws_push", 4096, NULL, 5, NULL);
 }
