@@ -7,6 +7,14 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4.2.2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.2.0
+        with:
+          node-version: 20
+      - name: Install web build dependencies
+        run: npm ci --prefix esp32
+      - name: Build and compress web assets
+        run: npm run web:build --prefix esp32
       - name: Build ESP32 application
         uses: espressif/esp-idf-ci-action@v1
         with:
