@@ -23,8 +23,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#include "lwip/inet.h"
 #include "log_buffer.h"
+#include "lwip/inet.h"
 #include "position.h"
 #include "slider.h"
 #include "slider_state_machine.h"
@@ -35,9 +35,9 @@ static config_apply_cb s_config_apply_cb  = NULL;
 static void           *s_config_apply_ctx = NULL;
 
 #define MAX_WS_CLIENTS 4
-static httpd_handle_t    s_server      = NULL;
+static httpd_handle_t    s_server = NULL;
 static int               s_ws_fds[MAX_WS_CLIENTS];
-static SemaphoreHandle_t s_ws_mutex    = NULL;
+static SemaphoreHandle_t s_ws_mutex = NULL;
 
 void webserver_set_config_apply_callback(config_apply_cb cb, void *user_ctx)
 {
@@ -143,11 +143,31 @@ static esp_err_t ws_handler(httpd_req_t *req)
         xSemaphoreGive(s_ws_mutex);
         return ESP_OK;
     }
-    // Consume any incoming frames (commands come via REST)
-    httpd_ws_frame_t frame = {.type = HTTPD_WS_TYPE_TEXT};
-    uint8_t          buf[64];
-    frame.payload = buf;
-    httpd_ws_recv_frame(req, &frame, sizeof(buf) - 1);
+    // Receive and discard any incoming frame (commands come via REST).
+    // Two-step receive: read the header first to get the frame length,
+    // then drain the payload, so the socket buffer is always emptied.
+    httpd_ws_frame_t frame;
+    memset(&frame, 0, sizeof(frame));
+    esp_err_t err = httpd_ws_recv_frame(req, &frame, 0);
+    if (err != ESP_OK)
+    {
+        return err;  // Return error so httpd closes this session cleanly
+    }
+    if (frame.len > 0)
+    {
+        uint8_t *buf = malloc(frame.len);
+        if (!buf)
+        {
+            return ESP_ERR_NO_MEM;
+        }
+        frame.payload = buf;
+        err           = httpd_ws_recv_frame(req, &frame, frame.len);
+        free(buf);
+        if (err != ESP_OK)
+        {
+            return err;
+        }
+    }
     return ESP_OK;
 }
 
@@ -171,8 +191,8 @@ static void ws_push_task(void *arg)
         last_state    = state;
 
         char buf[128];
-        snprintf(buf, sizeof(buf), "{\"position\":%d,\"state\":\"%s\"}",
-                 (int) position, slider_state_machine_state_id_to_string(state));
+        snprintf(buf, sizeof(buf), "{\"position\":%d,\"state\":\"%s\"}", (int) position,
+                 slider_state_machine_state_id_to_string(state));
 
         httpd_ws_frame_t frame = {
             .type    = HTTPD_WS_TYPE_TEXT,

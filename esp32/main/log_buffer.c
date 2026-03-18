@@ -8,10 +8,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 
-static char          s_buf[LOG_BUF_SIZE];
-static size_t        s_head = 0; /* index of oldest byte */
-static size_t        s_fill = 0; /* number of valid bytes currently stored */
-static portMUX_TYPE  s_mux  = portMUX_INITIALIZER_UNLOCKED;
+static char           s_buf[LOG_BUF_SIZE];
+static size_t         s_head         = 0; /* index of oldest byte */
+static size_t         s_fill         = 0; /* number of valid bytes currently stored */
+static portMUX_TYPE   s_mux          = portMUX_INITIALIZER_UNLOCKED;
 static vprintf_like_t s_orig_vprintf = NULL;
 
 static void write_byte(char c)

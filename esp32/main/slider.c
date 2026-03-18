@@ -52,7 +52,8 @@ void slider_motor_enable(bool enable)
     // drv8452_sleep(slider_drv8452, !enable);
     esp_err_t err = drv8452_register_write(slider_drv8452, DRV8452_REG_CTRL1,
                                            enable ? DRV8452_CTRL1_EN_OUT_ENABLED : DRV8452_CTRL1_EN_OUT_DISABLED);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
         ESP_LOGW(TAG, "Failed to %s motor driver: %s", enable ? "enable" : "disable", esp_err_to_name(err));
     }
 }
