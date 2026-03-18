@@ -6,9 +6,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
       - name: Setup Node.js
-        uses: actions/setup-node@v4.2.0
+        uses: actions/setup-node@v6.3.0
         with:
           node-version: 20
       - name: Install web build dependencies
@@ -38,7 +38,7 @@ jobs:
           echo "file_postfix=$file_postfix" >> $GITHUB_OUTPUT
           
       - name: Upload application artifacts
-        uses: actions/upload-artifact@v4.6.1
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: esp32-firmware-${{ steps.determine_artifact_name.outputs.file_postfix }}
           path: |
@@ -53,9 +53,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v6.0.2
       - name: Download artifacts
-        uses: actions/download-artifact@v4.1.9
+        uses: actions/download-artifact@v8.0.1
         with:
           path: esp32-firmware
       - name: Determine version
@@ -72,12 +72,12 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "file_postfix=$file_postfix" >> $GITHUB_OUTPUT
       - name: Publish documentation
-        uses: JamesIves/github-pages-deploy-action@v4.7.4
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
           folder: esp32-firmware/documentation
       - name: Release to Github        
         id: create_release
-        uses: ncipollo/release-action@v1.16.0
+        uses: ncipollo/release-action@v1.21.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ steps.determine_version.outputs.file_postfix }}
