@@ -147,6 +147,18 @@ void slider_position(int32_t position)
     position_set(position);
 }
 
+void slider_encoder_reset_in_stop(void)
+{
+    ESP_LOGI(TAG, "Encoder reset at IN_STOP (position = 0)");
+    shaft_encoder_clear(slider_encoder);
+}
+
+void slider_encoder_set_out_stop(void)
+{
+    ESP_LOGI(TAG, "Encoder set at OUT_STOP (position = %d)", POSITION_MAX_ENCODER_COUNT);
+    shaft_encoder_set_count(slider_encoder, POSITION_MAX_ENCODER_COUNT);
+}
+
 static uint8_t sensor_state()
 {
     uint8_t state_mask = 0;
@@ -163,9 +175,12 @@ static void event_task(void *arg)
     (void) arg;
     slider_state_machine_EventId event;
     int32_t                      last_position = -1;  // Initialize to invalid position
+    int                          stall_count   = 0;
+    int                          cycle_count   = 0;
     shaft_encoder_get_count(slider_encoder, &last_position);
     for (;;)
     {
+        cycle_count++;
         // Wait up to 100 ms for an event and perform stall check
         if (xQueueReceive(slider_event_queue, &event, pdMS_TO_TICKS(100)) == pdTRUE)
         {
@@ -179,14 +194,30 @@ static void event_task(void *arg)
         {
             int32_t current_position = -1;
             shaft_encoder_get_count(slider_encoder, &current_position);
+
+            position_set(current_position);
+
+            if (cycle_count % 10 == 0)
+            {
+                ESP_LOGI(TAG, "Position: %" PRId32, current_position);
+            }
+
             // Ignore check if position is not yet initialized
             if (current_position != -1 && last_position != -1)
             {
                 bool speed_requested = (slider_sm.vars.speed > 0);
                 if (speed_requested && current_position == last_position)
                 {
-                    ESP_LOGE(TAG, "Stall detected: position unchanged while moving");
-                    slider_state_machine_dispatch_event(&slider_sm, slider_state_machine_EventId_MOTOR_FAULT);
+                    if (++stall_count >= 3)
+                    {
+                        ESP_LOGE(TAG, "Stall detected: position unchanged while moving");
+                        slider_state_machine_dispatch_event(&slider_sm, slider_state_machine_EventId_MOTOR_FAULT);
+                        stall_count = 0;
+                    }
+                }
+                else
+                {
+                    stall_count = 0;
                 }
             }
             // Update last_position for next comparison

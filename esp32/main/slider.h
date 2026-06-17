@@ -20,6 +20,8 @@ bool slider_is_at_out_stop();
 void slider_fault_handler();
 void slider_status(bool on);
 void slider_position(int32_t position);
+void slider_encoder_reset_in_stop(void);
+void slider_encoder_set_out_stop(void);
 
 // Enqueue an event to be processed by the slider state machine task
 bool slider_post_event(slider_state_machine_EventId event);

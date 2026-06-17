@@ -6,11 +6,12 @@
 // Event-driven architecture
 
 #include "slider_state_machine.h"
-#include <stdbool.h> // required for `consume_event` flag
-#include <string.h> // for memset
+
+#include <stdbool.h>  // required for `consume_event` flag
+#include <string.h>   // for memset
+
 #include "esp_log.h"
 #include "slider.h"
-
 
 // This function is used when StateSmith doesn't know what the active leaf state is at
 // compile time due to sub states or when multiple states need to be exited.
@@ -98,7 +99,6 @@ static void STOPPED_STATE_cmd_move_out(slider_state_machine* sm);
 
 static void STOPPED_STATE_motor_fault(slider_state_machine* sm);
 
-
 // State machine constructor. Must be called before start or dispatch event functions. Not thread safe.
 void slider_state_machine_ctor(slider_state_machine* sm)
 {
@@ -112,27 +112,29 @@ void slider_state_machine_start(slider_state_machine* sm)
     // ROOT behavior
     // uml: TransitionTo(ROOT.<InitialState>)
     {
-        // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition). Already at LCA, no exiting required.
-        
+        // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition). Already at LCA, no
+        // exiting required.
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `ROOT.<InitialState>`.
         // ROOT.<InitialState> is a pseudo state and cannot have an `enter` trigger.
-        
+
         // ROOT.<InitialState> behavior
         // uml: TransitionTo(STOPPED_STATE)
         {
-            // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition). Already at LCA, no exiting required.
-            
+            // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition). Already at LCA,
+            // no exiting required.
+
             // Step 2: Transition action: ``.
-            
+
             // Step 3: Enter/move towards transition target `STOPPED_STATE`.
             STOPPED_STATE_enter(sm);
-            
+
             // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
             return;
-        } // end of behavior for ROOT.<InitialState>
-    } // end of behavior for ROOT
+        }  // end of behavior for ROOT.<InitialState>
+    }  // end of behavior for ROOT
 }
 
 // Dispatches an event to the state machine. Not thread safe.
@@ -145,142 +147,239 @@ void slider_state_machine_dispatch_event(slider_state_machine* sm, slider_state_
         case slider_state_machine_StateId_ROOT:
             // No events handled by this state (or its ancestors).
             break;
-        
+
         // STATE: ERROR_STATE
         case slider_state_machine_StateId_ERROR_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_CMD_CLEAR_FAULT: ERROR_STATE_cmd_clear_fault(sm); break;
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_CMD_CLEAR_FAULT:
+                    ERROR_STATE_cmd_clear_fault(sm);
+                    break;
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: MOVING_IN_STATE
         case slider_state_machine_StateId_MOVING_IN_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break;
-                case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break;
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break;
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_IN_STATE_cmd_stop(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT:
+                    MOVING_IN_STATE_cmd_move_out(sm);
+                    break;
+                case slider_state_machine_EventId_SENSOR_IN_STOP:
+                    MOVING_IN_STATE_sensor_in_stop(sm);
+                    break;
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_IN_STATE_motor_fault(sm);
+                    break;
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: IN_FULL_SPEED_STATE
         case slider_state_machine_StateId_IN_FULL_SPEED_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_SENSOR_IN_SLOW: IN_FULL_SPEED_STATE_sensor_in_slow(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break; // First ancestor handler for this event
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_SENSOR_IN_SLOW:
+                    IN_FULL_SPEED_STATE_sensor_in_slow(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT:
+                    MOVING_IN_STATE_cmd_move_out(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_IN_STATE_motor_fault(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_IN_STATE_cmd_stop(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_SENSOR_IN_STOP:
+                    MOVING_IN_STATE_sensor_in_stop(sm);
+                    break;  // First ancestor handler for this event
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: IN_RAMP_DOWN_STATE
         case slider_state_machine_StateId_IN_RAMP_DOWN_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_TIMER_EXPIRED: IN_RAMP_DOWN_STATE_timer_expired(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break; // First ancestor handler for this event
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_TIMER_EXPIRED:
+                    IN_RAMP_DOWN_STATE_timer_expired(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT:
+                    MOVING_IN_STATE_cmd_move_out(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_IN_STATE_motor_fault(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_IN_STATE_cmd_stop(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_SENSOR_IN_STOP:
+                    MOVING_IN_STATE_sensor_in_stop(sm);
+                    break;  // First ancestor handler for this event
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: IN_RAMP_UP_STATE
         case slider_state_machine_StateId_IN_RAMP_UP_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_TIMER_EXPIRED: IN_RAMP_UP_STATE_timer_expired(sm); break;
-                case slider_state_machine_EventId_SENSOR_IN_SLOW: IN_RAMP_UP_STATE_sensor_in_slow(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_OUT: MOVING_IN_STATE_cmd_move_out(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_IN_STATE_motor_fault(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_CMD_STOP: MOVING_IN_STATE_cmd_stop(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_SENSOR_IN_STOP: MOVING_IN_STATE_sensor_in_stop(sm); break; // First ancestor handler for this event
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_TIMER_EXPIRED:
+                    IN_RAMP_UP_STATE_timer_expired(sm);
+                    break;
+                case slider_state_machine_EventId_SENSOR_IN_SLOW:
+                    IN_RAMP_UP_STATE_sensor_in_slow(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_OUT:
+                    MOVING_IN_STATE_cmd_move_out(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_IN_STATE_motor_fault(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_IN_STATE_cmd_stop(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_SENSOR_IN_STOP:
+                    MOVING_IN_STATE_sensor_in_stop(sm);
+                    break;  // First ancestor handler for this event
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: MOVING_OUT_STATE
         case slider_state_machine_StateId_MOVING_OUT_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break;
-                case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break;
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break;
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_OUT_STATE_cmd_stop(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_IN:
+                    MOVING_OUT_STATE_cmd_move_in(sm);
+                    break;
+                case slider_state_machine_EventId_SENSOR_OUT_STOP:
+                    MOVING_OUT_STATE_sensor_out_stop(sm);
+                    break;
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_OUT_STATE_motor_fault(sm);
+                    break;
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: OUT_FULL_SPEED_STATE
         case slider_state_machine_StateId_OUT_FULL_SPEED_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_SENSOR_OUT_SLOW: OUT_FULL_SPEED_STATE_sensor_out_slow(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break; // First ancestor handler for this event
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_SENSOR_OUT_SLOW:
+                    OUT_FULL_SPEED_STATE_sensor_out_slow(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_IN:
+                    MOVING_OUT_STATE_cmd_move_in(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_OUT_STATE_motor_fault(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_OUT_STATE_cmd_stop(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_SENSOR_OUT_STOP:
+                    MOVING_OUT_STATE_sensor_out_stop(sm);
+                    break;  // First ancestor handler for this event
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: OUT_RAMP_DOWN_STATE
         case slider_state_machine_StateId_OUT_RAMP_DOWN_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_TIMER_EXPIRED: OUT_RAMP_DOWN_STATE_timer_expired(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break; // First ancestor handler for this event
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_TIMER_EXPIRED:
+                    OUT_RAMP_DOWN_STATE_timer_expired(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_IN:
+                    MOVING_OUT_STATE_cmd_move_in(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_OUT_STATE_motor_fault(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_OUT_STATE_cmd_stop(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_SENSOR_OUT_STOP:
+                    MOVING_OUT_STATE_sensor_out_stop(sm);
+                    break;  // First ancestor handler for this event
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: OUT_RAMP_UP_STATE
         case slider_state_machine_StateId_OUT_RAMP_UP_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_TIMER_EXPIRED: OUT_RAMP_UP_STATE_timer_expired(sm); break;
-                case slider_state_machine_EventId_SENSOR_OUT_SLOW: OUT_RAMP_UP_STATE_sensor_out_slow(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_IN: MOVING_OUT_STATE_cmd_move_in(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_MOTOR_FAULT: MOVING_OUT_STATE_motor_fault(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_CMD_STOP: MOVING_OUT_STATE_cmd_stop(sm); break; // First ancestor handler for this event
-                case slider_state_machine_EventId_SENSOR_OUT_STOP: MOVING_OUT_STATE_sensor_out_stop(sm); break; // First ancestor handler for this event
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_TIMER_EXPIRED:
+                    OUT_RAMP_UP_STATE_timer_expired(sm);
+                    break;
+                case slider_state_machine_EventId_SENSOR_OUT_SLOW:
+                    OUT_RAMP_UP_STATE_sensor_out_slow(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_IN:
+                    MOVING_OUT_STATE_cmd_move_in(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    MOVING_OUT_STATE_motor_fault(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_CMD_STOP:
+                    MOVING_OUT_STATE_cmd_stop(sm);
+                    break;  // First ancestor handler for this event
+                case slider_state_machine_EventId_SENSOR_OUT_STOP:
+                    MOVING_OUT_STATE_sensor_out_stop(sm);
+                    break;  // First ancestor handler for this event
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
-        
+
         // STATE: STOPPED_STATE
         case slider_state_machine_StateId_STOPPED_STATE:
             switch (event_id)
             {
-                case slider_state_machine_EventId_CMD_MOVE_OUT: STOPPED_STATE_cmd_move_out(sm); break;
-                case slider_state_machine_EventId_CMD_MOVE_IN: STOPPED_STATE_cmd_move_in(sm); break;
-                case slider_state_machine_EventId_MOTOR_FAULT: STOPPED_STATE_motor_fault(sm); break;
-                
-                default: break; // to avoid "unused enumeration value in switch" warning
+                case slider_state_machine_EventId_CMD_MOVE_OUT:
+                    STOPPED_STATE_cmd_move_out(sm);
+                    break;
+                case slider_state_machine_EventId_CMD_MOVE_IN:
+                    STOPPED_STATE_cmd_move_in(sm);
+                    break;
+                case slider_state_machine_EventId_MOTOR_FAULT:
+                    STOPPED_STATE_motor_fault(sm);
+                    break;
+
+                default:
+                    break;  // to avoid "unused enumeration value in switch" warning
             }
             break;
     }
-    
 }
 
 // This function is used when StateSmith doesn't know what the active leaf state is at
@@ -291,31 +390,51 @@ static void exit_up_to_state_handler(slider_state_machine* sm, slider_state_mach
     {
         switch (sm->state_id)
         {
-            case slider_state_machine_StateId_ERROR_STATE: ERROR_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_MOVING_IN_STATE: MOVING_IN_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_IN_FULL_SPEED_STATE: IN_FULL_SPEED_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_IN_RAMP_DOWN_STATE: IN_RAMP_DOWN_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_IN_RAMP_UP_STATE: IN_RAMP_UP_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_MOVING_OUT_STATE: MOVING_OUT_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_OUT_FULL_SPEED_STATE: OUT_FULL_SPEED_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_OUT_RAMP_DOWN_STATE: OUT_RAMP_DOWN_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_OUT_RAMP_UP_STATE: OUT_RAMP_UP_STATE_exit(sm); break;
-            
-            case slider_state_machine_StateId_STOPPED_STATE: STOPPED_STATE_exit(sm); break;
-            
-            default: return;  // Just to be safe. Prevents infinite loop if state ID memory is somehow corrupted.
+            case slider_state_machine_StateId_ERROR_STATE:
+                ERROR_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_MOVING_IN_STATE:
+                MOVING_IN_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_IN_FULL_SPEED_STATE:
+                IN_FULL_SPEED_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_IN_RAMP_DOWN_STATE:
+                IN_RAMP_DOWN_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_IN_RAMP_UP_STATE:
+                IN_RAMP_UP_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_MOVING_OUT_STATE:
+                MOVING_OUT_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_OUT_FULL_SPEED_STATE:
+                OUT_FULL_SPEED_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_OUT_RAMP_DOWN_STATE:
+                OUT_RAMP_DOWN_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_OUT_RAMP_UP_STATE:
+                OUT_RAMP_UP_STATE_exit(sm);
+                break;
+
+            case slider_state_machine_StateId_STOPPED_STATE:
+                STOPPED_STATE_exit(sm);
+                break;
+
+            default:
+                return;  // Just to be safe. Prevents infinite loop if state ID memory is somehow corrupted.
         }
     }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state ROOT
@@ -326,7 +445,6 @@ static void ROOT_enter(slider_state_machine* sm)
     sm->state_id = slider_state_machine_StateId_ROOT;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state ERROR_STATE
 ////////////////////////////////////////////////////////////////////////////////
@@ -334,13 +452,13 @@ static void ROOT_enter(slider_state_machine* sm)
 static void ERROR_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_ERROR_STATE;
-    
+
     // ERROR_STATE behavior
     // uml: enter / { slider_fault_handler(); }
     {
         // Step 1: execute action `slider_fault_handler();`
         slider_fault_handler();
-    } // end of behavior for ERROR_STATE
+    }  // end of behavior for ERROR_STATE
 }
 
 static void ERROR_STATE_exit(slider_state_machine* sm)
@@ -355,19 +473,18 @@ static void ERROR_STATE_cmd_clear_fault(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         ERROR_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `STOPPED_STATE`.
         STOPPED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for ERROR_STATE
-    
+    }  // end of behavior for ERROR_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state MOVING_IN_STATE
@@ -391,17 +508,17 @@ static void MOVING_IN_STATE_cmd_move_out(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `OUT_RAMP_UP_STATE`.
         MOVING_OUT_STATE_enter(sm);
         OUT_RAMP_UP_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_IN_STATE
-    
+    }  // end of behavior for MOVING_IN_STATE
+
     // No ancestor handles this event.
 }
 
@@ -412,16 +529,16 @@ static void MOVING_IN_STATE_cmd_stop(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `STOPPED_STATE`.
         STOPPED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_IN_STATE
-    
+    }  // end of behavior for MOVING_IN_STATE
+
     // No ancestor handles this event.
 }
 
@@ -432,16 +549,16 @@ static void MOVING_IN_STATE_motor_fault(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `ERROR_STATE`.
         ERROR_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_IN_STATE
-    
+    }  // end of behavior for MOVING_IN_STATE
+
     // No ancestor handles this event.
 }
 
@@ -452,19 +569,19 @@ static void MOVING_IN_STATE_sensor_in_stop(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
-        // Step 2: Transition action: ``.
-        
+
+        // Step 2: Transition action: `slider_encoder_reset_in_stop();`.
+        slider_encoder_reset_in_stop();
+
         // Step 3: Enter/move towards transition target `STOPPED_STATE`.
         STOPPED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_IN_STATE
-    
+    }  // end of behavior for MOVING_IN_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state IN_FULL_SPEED_STATE
@@ -473,13 +590,13 @@ static void MOVING_IN_STATE_sensor_in_stop(slider_state_machine* sm)
 static void IN_FULL_SPEED_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_IN_FULL_SPEED_STATE;
-    
+
     // IN_FULL_SPEED_STATE behavior
     // uml: enter / { slider_speed_set(SLIDER_MAX_SPEED); }
     {
         // Step 1: execute action `slider_speed_set(SLIDER_MAX_SPEED);`
         slider_speed_set(SLIDER_MAX_SPEED);
-    } // end of behavior for IN_FULL_SPEED_STATE
+    }  // end of behavior for IN_FULL_SPEED_STATE
 }
 
 static void IN_FULL_SPEED_STATE_exit(slider_state_machine* sm)
@@ -494,19 +611,18 @@ static void IN_FULL_SPEED_STATE_sensor_in_slow(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `MOVING_IN_STATE` state (Least Common Ancestor for transition).
         IN_FULL_SPEED_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `IN_RAMP_DOWN_STATE`.
         IN_RAMP_DOWN_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for IN_FULL_SPEED_STATE
-    
+    }  // end of behavior for IN_FULL_SPEED_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state IN_RAMP_DOWN_STATE
@@ -515,13 +631,13 @@ static void IN_FULL_SPEED_STATE_sensor_in_slow(slider_state_machine* sm)
 static void IN_RAMP_DOWN_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_IN_RAMP_DOWN_STATE;
-    
+
     // IN_RAMP_DOWN_STATE behavior
-    // uml: enter / { slider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    // uml: enter / { slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS); }
     {
-        // Step 1: execute action `slider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for IN_RAMP_DOWN_STATE
+        // Step 1: execute action `slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS);`
+        slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS);
+    }  // end of behavior for IN_RAMP_DOWN_STATE
 }
 
 static void IN_RAMP_DOWN_STATE_exit(slider_state_machine* sm)
@@ -532,18 +648,19 @@ static void IN_RAMP_DOWN_STATE_exit(slider_state_machine* sm)
 static void IN_RAMP_DOWN_STATE_timer_expired(slider_state_machine* sm)
 {
     // IN_RAMP_DOWN_STATE behavior
-    // uml: TIMER_EXPIRED [speed > SLIDER_MIN_SPEED] / { speed -= SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
-    if (sm->vars.speed > SLIDER_MIN_SPEED)
+    // uml: TIMER_EXPIRED [speed > SLIDER_RAMP_DOWN_MIN_SPEED] / { speed -= SLIDER_SPEED_STEP;
+    // \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    if (sm->vars.speed > SLIDER_RAMP_DOWN_MIN_SPEED)
     {
-        // Step 1: execute action `speed -= SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        sm->vars.speed -= SLIDER_SPEED_STEP; 
-        slider_speed_set(sm->vars.speed); 
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for IN_RAMP_DOWN_STATE
-    
+        // Step 1: execute action `speed -= SLIDER_SPEED_STEP; \nslider_speed_set(speed);
+        // \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
+        sm->vars.speed -= SLIDER_SPEED_STEP;
+        slider_speed_set(sm->vars.speed);
+        slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS);
+    }  // end of behavior for IN_RAMP_DOWN_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state IN_RAMP_UP_STATE
@@ -552,17 +669,19 @@ static void IN_RAMP_DOWN_STATE_timer_expired(slider_state_machine* sm)
 static void IN_RAMP_UP_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_IN_RAMP_UP_STATE;
-    
+
     // IN_RAMP_UP_STATE behavior
-    // uml: enter / { slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_IN); \nspeed = SLIDER_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    // uml: enter / { slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_IN); \nspeed =
+    // SLIDER_RAMP_UP_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
     {
-        // Step 1: execute action `slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_IN); \nspeed = SLIDER_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        slider_motor_enable(true); 
-        slider_direction_set(SLIDER_DIRECTION_IN); 
-        sm->vars.speed = SLIDER_MIN_SPEED; 
-        slider_speed_set(sm->vars.speed); 
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for IN_RAMP_UP_STATE
+        // Step 1: execute action `slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_IN); \nspeed =
+        // SLIDER_RAMP_UP_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
+        slider_motor_enable(true);
+        slider_direction_set(SLIDER_DIRECTION_IN);
+        sm->vars.speed = SLIDER_RAMP_UP_MIN_SPEED;
+        slider_speed_set(sm->vars.speed);
+        slider_start_timer(SLIDER_RAMP_UP_INTERVAL_MS);
+    }  // end of behavior for IN_RAMP_UP_STATE
 }
 
 static void IN_RAMP_UP_STATE_exit(slider_state_machine* sm)
@@ -577,50 +696,51 @@ static void IN_RAMP_UP_STATE_sensor_in_slow(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `MOVING_IN_STATE` state (Least Common Ancestor for transition).
         IN_RAMP_UP_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `IN_RAMP_DOWN_STATE`.
         IN_RAMP_DOWN_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for IN_RAMP_UP_STATE
-    
+    }  // end of behavior for IN_RAMP_UP_STATE
+
     // No ancestor handles this event.
 }
 
 static void IN_RAMP_UP_STATE_timer_expired(slider_state_machine* sm)
 {
     // IN_RAMP_UP_STATE behavior
-    // uml: TIMER_EXPIRED [speed < SLIDER_MAX_SPEED] / { speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    // uml: TIMER_EXPIRED [speed < SLIDER_MAX_SPEED] / { speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed);
+    // \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
     if (sm->vars.speed < SLIDER_MAX_SPEED)
     {
-        // Step 1: execute action `speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        sm->vars.speed += SLIDER_SPEED_STEP; 
-        slider_speed_set(sm->vars.speed); 
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for IN_RAMP_UP_STATE
-    
+        // Step 1: execute action `speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed);
+        // \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
+        sm->vars.speed += SLIDER_SPEED_STEP;
+        slider_speed_set(sm->vars.speed);
+        slider_start_timer(SLIDER_RAMP_UP_INTERVAL_MS);
+    }  // end of behavior for IN_RAMP_UP_STATE
+
     // IN_RAMP_UP_STATE behavior
     // uml: TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(IN_FULL_SPEED_STATE)
     if (sm->vars.speed >= SLIDER_MAX_SPEED)
     {
         // Step 1: Exit states until we reach `MOVING_IN_STATE` state (Least Common Ancestor for transition).
         IN_RAMP_UP_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `IN_FULL_SPEED_STATE`.
         IN_FULL_SPEED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for IN_RAMP_UP_STATE
-    
+    }  // end of behavior for IN_RAMP_UP_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state MOVING_OUT_STATE
@@ -644,17 +764,17 @@ static void MOVING_OUT_STATE_cmd_move_in(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `IN_RAMP_UP_STATE`.
         MOVING_IN_STATE_enter(sm);
         IN_RAMP_UP_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_OUT_STATE
-    
+    }  // end of behavior for MOVING_OUT_STATE
+
     // No ancestor handles this event.
 }
 
@@ -665,16 +785,16 @@ static void MOVING_OUT_STATE_cmd_stop(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `STOPPED_STATE`.
         STOPPED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_OUT_STATE
-    
+    }  // end of behavior for MOVING_OUT_STATE
+
     // No ancestor handles this event.
 }
 
@@ -685,16 +805,16 @@ static void MOVING_OUT_STATE_motor_fault(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `ERROR_STATE`.
         ERROR_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_OUT_STATE
-    
+    }  // end of behavior for MOVING_OUT_STATE
+
     // No ancestor handles this event.
 }
 
@@ -705,19 +825,19 @@ static void MOVING_OUT_STATE_sensor_out_stop(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         exit_up_to_state_handler(sm, slider_state_machine_StateId_ROOT);
-        
-        // Step 2: Transition action: ``.
-        
+
+        // Step 2: Transition action: `slider_encoder_set_out_stop();`.
+        slider_encoder_set_out_stop();
+
         // Step 3: Enter/move towards transition target `STOPPED_STATE`.
         STOPPED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for MOVING_OUT_STATE
-    
+    }  // end of behavior for MOVING_OUT_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state OUT_FULL_SPEED_STATE
@@ -726,13 +846,13 @@ static void MOVING_OUT_STATE_sensor_out_stop(slider_state_machine* sm)
 static void OUT_FULL_SPEED_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_OUT_FULL_SPEED_STATE;
-    
+
     // OUT_FULL_SPEED_STATE behavior
     // uml: enter / { slider_speed_set(SLIDER_MAX_SPEED); }
     {
         // Step 1: execute action `slider_speed_set(SLIDER_MAX_SPEED);`
         slider_speed_set(SLIDER_MAX_SPEED);
-    } // end of behavior for OUT_FULL_SPEED_STATE
+    }  // end of behavior for OUT_FULL_SPEED_STATE
 }
 
 static void OUT_FULL_SPEED_STATE_exit(slider_state_machine* sm)
@@ -747,19 +867,18 @@ static void OUT_FULL_SPEED_STATE_sensor_out_slow(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `MOVING_OUT_STATE` state (Least Common Ancestor for transition).
         OUT_FULL_SPEED_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `OUT_RAMP_DOWN_STATE`.
         OUT_RAMP_DOWN_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for OUT_FULL_SPEED_STATE
-    
+    }  // end of behavior for OUT_FULL_SPEED_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state OUT_RAMP_DOWN_STATE
@@ -768,13 +887,13 @@ static void OUT_FULL_SPEED_STATE_sensor_out_slow(slider_state_machine* sm)
 static void OUT_RAMP_DOWN_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_OUT_RAMP_DOWN_STATE;
-    
+
     // OUT_RAMP_DOWN_STATE behavior
-    // uml: enter / { slider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    // uml: enter / { slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS); }
     {
-        // Step 1: execute action `slider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for OUT_RAMP_DOWN_STATE
+        // Step 1: execute action `slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS);`
+        slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS);
+    }  // end of behavior for OUT_RAMP_DOWN_STATE
 }
 
 static void OUT_RAMP_DOWN_STATE_exit(slider_state_machine* sm)
@@ -785,18 +904,19 @@ static void OUT_RAMP_DOWN_STATE_exit(slider_state_machine* sm)
 static void OUT_RAMP_DOWN_STATE_timer_expired(slider_state_machine* sm)
 {
     // OUT_RAMP_DOWN_STATE behavior
-    // uml: TIMER_EXPIRED [speed > SLIDER_MIN_SPEED] / { speed -= SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
-    if (sm->vars.speed > SLIDER_MIN_SPEED)
+    // uml: TIMER_EXPIRED [speed > SLIDER_RAMP_DOWN_MIN_SPEED] / { speed -= SLIDER_SPEED_STEP;
+    // \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    if (sm->vars.speed > SLIDER_RAMP_DOWN_MIN_SPEED)
     {
-        // Step 1: execute action `speed -= SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        sm->vars.speed -= SLIDER_SPEED_STEP; 
-        slider_speed_set(sm->vars.speed); 
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for OUT_RAMP_DOWN_STATE
-    
+        // Step 1: execute action `speed -= SLIDER_SPEED_STEP; \nslider_speed_set(speed);
+        // \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
+        sm->vars.speed -= SLIDER_SPEED_STEP;
+        slider_speed_set(sm->vars.speed);
+        slider_start_timer(SLIDER_RAMP_DOWN_INTERVAL_MS);
+    }  // end of behavior for OUT_RAMP_DOWN_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state OUT_RAMP_UP_STATE
@@ -805,17 +925,19 @@ static void OUT_RAMP_DOWN_STATE_timer_expired(slider_state_machine* sm)
 static void OUT_RAMP_UP_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_OUT_RAMP_UP_STATE;
-    
+
     // OUT_RAMP_UP_STATE behavior
-    // uml: enter / { slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_OUT); \nspeed = SLIDER_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    // uml: enter / { slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_OUT); \nspeed =
+    // SLIDER_RAMP_UP_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
     {
-        // Step 1: execute action `slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_OUT); \nspeed = SLIDER_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        slider_motor_enable(true); 
-        slider_direction_set(SLIDER_DIRECTION_OUT); 
-        sm->vars.speed = SLIDER_MIN_SPEED; 
-        slider_speed_set(sm->vars.speed); 
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for OUT_RAMP_UP_STATE
+        // Step 1: execute action `slider_motor_enable(true); \nslider_direction_set(SLIDER_DIRECTION_OUT); \nspeed =
+        // SLIDER_RAMP_UP_MIN_SPEED; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
+        slider_motor_enable(true);
+        slider_direction_set(SLIDER_DIRECTION_OUT);
+        sm->vars.speed = SLIDER_RAMP_UP_MIN_SPEED;
+        slider_speed_set(sm->vars.speed);
+        slider_start_timer(SLIDER_RAMP_UP_INTERVAL_MS);
+    }  // end of behavior for OUT_RAMP_UP_STATE
 }
 
 static void OUT_RAMP_UP_STATE_exit(slider_state_machine* sm)
@@ -830,50 +952,51 @@ static void OUT_RAMP_UP_STATE_sensor_out_slow(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `MOVING_OUT_STATE` state (Least Common Ancestor for transition).
         OUT_RAMP_UP_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `OUT_RAMP_DOWN_STATE`.
         OUT_RAMP_DOWN_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for OUT_RAMP_UP_STATE
-    
+    }  // end of behavior for OUT_RAMP_UP_STATE
+
     // No ancestor handles this event.
 }
 
 static void OUT_RAMP_UP_STATE_timer_expired(slider_state_machine* sm)
 {
     // OUT_RAMP_UP_STATE behavior
-    // uml: TIMER_EXPIRED [speed < SLIDER_MAX_SPEED] / { speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
+    // uml: TIMER_EXPIRED [speed < SLIDER_MAX_SPEED] / { speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed);
+    // \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS); }
     if (sm->vars.speed < SLIDER_MAX_SPEED)
     {
-        // Step 1: execute action `speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed); \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
-        sm->vars.speed += SLIDER_SPEED_STEP; 
-        slider_speed_set(sm->vars.speed); 
-        slider_start_timer(SLIDER_RAMP_INTERVAL_MS);
-    } // end of behavior for OUT_RAMP_UP_STATE
-    
+        // Step 1: execute action `speed += SLIDER_SPEED_STEP; \nslider_speed_set(speed);
+        // \nslider_start_timer(SLIDER_RAMP_INTERVAL_MS);`
+        sm->vars.speed += SLIDER_SPEED_STEP;
+        slider_speed_set(sm->vars.speed);
+        slider_start_timer(SLIDER_RAMP_UP_INTERVAL_MS);
+    }  // end of behavior for OUT_RAMP_UP_STATE
+
     // OUT_RAMP_UP_STATE behavior
     // uml: TIMER_EXPIRED [speed >= SLIDER_MAX_SPEED] TransitionTo(OUT_FULL_SPEED_STATE)
     if (sm->vars.speed >= SLIDER_MAX_SPEED)
     {
         // Step 1: Exit states until we reach `MOVING_OUT_STATE` state (Least Common Ancestor for transition).
         OUT_RAMP_UP_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `OUT_FULL_SPEED_STATE`.
         OUT_FULL_SPEED_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for OUT_RAMP_UP_STATE
-    
+    }  // end of behavior for OUT_RAMP_UP_STATE
+
     // No ancestor handles this event.
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // event handlers for state STOPPED_STATE
@@ -882,14 +1005,14 @@ static void OUT_RAMP_UP_STATE_timer_expired(slider_state_machine* sm)
 static void STOPPED_STATE_enter(slider_state_machine* sm)
 {
     sm->state_id = slider_state_machine_StateId_STOPPED_STATE;
-    
+
     // STOPPED_STATE behavior
     // uml: enter / { slider_motor_enable(false); \nslider_speed_set(0); }
     {
         // Step 1: execute action `slider_motor_enable(false); \nslider_speed_set(0);`
-        slider_motor_enable(false); 
+        slider_motor_enable(false);
         slider_speed_set(0);
-    } // end of behavior for STOPPED_STATE
+    }  // end of behavior for STOPPED_STATE
 }
 
 static void STOPPED_STATE_exit(slider_state_machine* sm)
@@ -905,17 +1028,17 @@ static void STOPPED_STATE_cmd_move_in(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         STOPPED_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `IN_RAMP_UP_STATE`.
         MOVING_IN_STATE_enter(sm);
         IN_RAMP_UP_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for STOPPED_STATE
-    
+    }  // end of behavior for STOPPED_STATE
+
     // No ancestor handles this event.
 }
 
@@ -927,17 +1050,17 @@ static void STOPPED_STATE_cmd_move_out(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         STOPPED_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `OUT_RAMP_UP_STATE`.
         MOVING_OUT_STATE_enter(sm);
         OUT_RAMP_UP_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for STOPPED_STATE
-    
+    }  // end of behavior for STOPPED_STATE
+
     // No ancestor handles this event.
 }
 
@@ -948,54 +1071,77 @@ static void STOPPED_STATE_motor_fault(slider_state_machine* sm)
     {
         // Step 1: Exit states until we reach `ROOT` state (Least Common Ancestor for transition).
         STOPPED_STATE_exit(sm);
-        
+
         // Step 2: Transition action: ``.
-        
+
         // Step 3: Enter/move towards transition target `ERROR_STATE`.
         ERROR_STATE_enter(sm);
-        
+
         // Step 4: complete transition. Ends event dispatch. No other behaviors are checked.
         return;
-    } // end of behavior for STOPPED_STATE
-    
+    }  // end of behavior for STOPPED_STATE
+
     // No ancestor handles this event.
 }
 
 // Thread safe.
-char const * slider_state_machine_state_id_to_string(slider_state_machine_StateId id)
+char const* slider_state_machine_state_id_to_string(slider_state_machine_StateId id)
 {
     switch (id)
     {
-        case slider_state_machine_StateId_ROOT: return "ROOT";
-        case slider_state_machine_StateId_ERROR_STATE: return "ERROR_STATE";
-        case slider_state_machine_StateId_MOVING_IN_STATE: return "MOVING_IN_STATE";
-        case slider_state_machine_StateId_IN_FULL_SPEED_STATE: return "IN_FULL_SPEED_STATE";
-        case slider_state_machine_StateId_IN_RAMP_DOWN_STATE: return "IN_RAMP_DOWN_STATE";
-        case slider_state_machine_StateId_IN_RAMP_UP_STATE: return "IN_RAMP_UP_STATE";
-        case slider_state_machine_StateId_MOVING_OUT_STATE: return "MOVING_OUT_STATE";
-        case slider_state_machine_StateId_OUT_FULL_SPEED_STATE: return "OUT_FULL_SPEED_STATE";
-        case slider_state_machine_StateId_OUT_RAMP_DOWN_STATE: return "OUT_RAMP_DOWN_STATE";
-        case slider_state_machine_StateId_OUT_RAMP_UP_STATE: return "OUT_RAMP_UP_STATE";
-        case slider_state_machine_StateId_STOPPED_STATE: return "STOPPED_STATE";
-        default: return "?";
+        case slider_state_machine_StateId_ROOT:
+            return "ROOT";
+        case slider_state_machine_StateId_ERROR_STATE:
+            return "ERROR_STATE";
+        case slider_state_machine_StateId_MOVING_IN_STATE:
+            return "MOVING_IN_STATE";
+        case slider_state_machine_StateId_IN_FULL_SPEED_STATE:
+            return "IN_FULL_SPEED_STATE";
+        case slider_state_machine_StateId_IN_RAMP_DOWN_STATE:
+            return "IN_RAMP_DOWN_STATE";
+        case slider_state_machine_StateId_IN_RAMP_UP_STATE:
+            return "IN_RAMP_UP_STATE";
+        case slider_state_machine_StateId_MOVING_OUT_STATE:
+            return "MOVING_OUT_STATE";
+        case slider_state_machine_StateId_OUT_FULL_SPEED_STATE:
+            return "OUT_FULL_SPEED_STATE";
+        case slider_state_machine_StateId_OUT_RAMP_DOWN_STATE:
+            return "OUT_RAMP_DOWN_STATE";
+        case slider_state_machine_StateId_OUT_RAMP_UP_STATE:
+            return "OUT_RAMP_UP_STATE";
+        case slider_state_machine_StateId_STOPPED_STATE:
+            return "STOPPED_STATE";
+        default:
+            return "?";
     }
 }
 
 // Thread safe.
-char const * slider_state_machine_event_id_to_string(slider_state_machine_EventId id)
+char const* slider_state_machine_event_id_to_string(slider_state_machine_EventId id)
 {
     switch (id)
     {
-        case slider_state_machine_EventId_CMD_CLEAR_FAULT: return "CMD_CLEAR_FAULT";
-        case slider_state_machine_EventId_CMD_MOVE_IN: return "CMD_MOVE_IN";
-        case slider_state_machine_EventId_CMD_MOVE_OUT: return "CMD_MOVE_OUT";
-        case slider_state_machine_EventId_CMD_STOP: return "CMD_STOP";
-        case slider_state_machine_EventId_MOTOR_FAULT: return "MOTOR_FAULT";
-        case slider_state_machine_EventId_SENSOR_IN_SLOW: return "SENSOR_IN_SLOW";
-        case slider_state_machine_EventId_SENSOR_IN_STOP: return "SENSOR_IN_STOP";
-        case slider_state_machine_EventId_SENSOR_OUT_SLOW: return "SENSOR_OUT_SLOW";
-        case slider_state_machine_EventId_SENSOR_OUT_STOP: return "SENSOR_OUT_STOP";
-        case slider_state_machine_EventId_TIMER_EXPIRED: return "TIMER_EXPIRED";
-        default: return "?";
+        case slider_state_machine_EventId_CMD_CLEAR_FAULT:
+            return "CMD_CLEAR_FAULT";
+        case slider_state_machine_EventId_CMD_MOVE_IN:
+            return "CMD_MOVE_IN";
+        case slider_state_machine_EventId_CMD_MOVE_OUT:
+            return "CMD_MOVE_OUT";
+        case slider_state_machine_EventId_CMD_STOP:
+            return "CMD_STOP";
+        case slider_state_machine_EventId_MOTOR_FAULT:
+            return "MOTOR_FAULT";
+        case slider_state_machine_EventId_SENSOR_IN_SLOW:
+            return "SENSOR_IN_SLOW";
+        case slider_state_machine_EventId_SENSOR_IN_STOP:
+            return "SENSOR_IN_STOP";
+        case slider_state_machine_EventId_SENSOR_OUT_SLOW:
+            return "SENSOR_OUT_SLOW";
+        case slider_state_machine_EventId_SENSOR_OUT_STOP:
+            return "SENSOR_OUT_STOP";
+        case slider_state_machine_EventId_TIMER_EXPIRED:
+            return "TIMER_EXPIRED";
+        default:
+            return "?";
     }
 }

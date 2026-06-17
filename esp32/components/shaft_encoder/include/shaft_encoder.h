@@ -26,6 +26,7 @@ extern "C"
     esp_err_t shaft_encoder_start(shaft_encoder_handle_t handle);
     esp_err_t shaft_encoder_stop(shaft_encoder_handle_t handle);
     esp_err_t shaft_encoder_clear(shaft_encoder_handle_t handle);
+    esp_err_t shaft_encoder_set_count(shaft_encoder_handle_t handle, int32_t count);
     esp_err_t shaft_encoder_get_count(shaft_encoder_handle_t handle, int32_t *count);
     esp_err_t shaft_encoder_deinit(shaft_encoder_handle_t handle);
 

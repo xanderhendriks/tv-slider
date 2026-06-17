@@ -29,9 +29,9 @@
                 "cmake.configureOnOpen": false
             },
             "extensions": [
+                "benkosoftware.plantumlviewer",
                 "espressif.esp-idf-extension",
-                "ms-vscode.cpptools-extension-pack",
-                "openai.chatgpt"
+                "ms-vscode.cpptools-extension-pack"
             ]
         }
     }
